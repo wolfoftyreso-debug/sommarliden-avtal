@@ -103,7 +103,7 @@ Sommarliden Holding AB är en självständig uppdragstagare och avtalet utgör i
 
 **Vid frågor om avtal, fakturering eller uppdraget kontaktas:**
 
-Leon Svensson  
+Leon Russo  
 leon@hypbit.com  
 Sommarliden Holding AB
 
@@ -145,4 +145,4 @@ Ort och datum: Tyresö, 2026-02-22
 
 ---
 
-*Dokument upprättat av Sommarliden Holding AB | Kontakt: Leon Svensson — leon@hypbit.com*
+*Dokument upprättat av Sommarliden Holding AB | Kontakt: Leon Russo — leon@hypbit.com*

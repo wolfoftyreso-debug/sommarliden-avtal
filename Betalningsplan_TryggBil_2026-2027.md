@@ -94,4 +94,4 @@
 ---
 
 *Betalningsplan upprättad av Sommarliden Holding AB, 2026-03-24*  
-*Kontakt: Leon Svensson — leon@hypbit.com*
+*Kontakt: Leon Russo — leon@hypbit.com*

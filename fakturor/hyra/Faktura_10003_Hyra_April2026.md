@@ -44,4 +44,4 @@ Vid utebliven betalning tillkommer dröjsmålsränta enligt räntelagen (referen
 ---
 
 **Frågor om faktura, avtal eller fastighet:**
-Leon Svensson — leon@hypbit.com
+Leon Russo — leon@hypbit.com
