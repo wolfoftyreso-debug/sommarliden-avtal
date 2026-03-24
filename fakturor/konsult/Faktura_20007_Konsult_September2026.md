@@ -3,7 +3,7 @@
 **Sommarliden Holding AB**
 Org.nr: 559141-7042
 Åvägen 9, 135 48 Tyresö
-leon@hypbit.com
+winston@hypbit.com
 
 ---
 
@@ -44,4 +44,4 @@ Vid utebliven betalning tillkommer dröjsmålsränta enligt räntelagen (referen
 ---
 
 **Frågor om faktura, avtal eller fastighet:**
-Leon Russo — leon@hypbit.com
+Winston — winston@hypbit.com

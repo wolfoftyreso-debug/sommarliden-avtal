@@ -103,8 +103,8 @@ Sommarliden Holding AB är en självständig uppdragstagare och avtalet utgör i
 
 **Vid frågor om avtal, fakturering eller uppdraget kontaktas:**
 
-Leon Russo  
-leon@hypbit.com  
+Winston  
+winston@hypbit.com  
 Sommarliden Holding AB
 
 **Kontaktperson Trygg Bil Stockholm AB:**  
@@ -145,4 +145,4 @@ Ort och datum: Tyresö, 2026-02-22
 
 ---
 
-*Dokument upprättat av Sommarliden Holding AB | Kontakt: Leon Russo — leon@hypbit.com*
+*Dokument upprättat av Sommarliden Holding AB | Kontakt: Winston — winston@hypbit.com*

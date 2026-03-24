@@ -119,8 +119,8 @@ Hyresgästen ansvarar för att teckna och vidmakthålla erforderliga försäkrin
 
 **Vid felanmälan, frågor om avtal, fakturering eller fastighet kontaktas:**
 
-Leon Russo  
-leon@hypbit.com  
+Winston  
+winston@hypbit.com  
 Sommarliden Holding AB
 
 Felanmälningar som kräver omedelbar åtgärd (t.ex. allvarliga vattenläckor, brandrisker) ska anmälas omgående på ovan e-postadress med ämnesraden "AKUT FELANMÄLAN".
@@ -163,4 +163,4 @@ Ort och datum: Tyresö, 2026-02-22
 
 ---
 
-*Dokument upprättat av Sommarliden Holding AB | Kontakt: Leon Russo — leon@hypbit.com*
+*Dokument upprättat av Sommarliden Holding AB | Kontakt: Winston — winston@hypbit.com*

@@ -19,7 +19,7 @@ Alla signerade original förvaras hos Sommarliden Holding AB och är daterade 20
 | Hyresgäst / Uppdragstagare | Trygg Bil Stockholm AB | 556777-3766 | Radiovägen 19, 135 48 Tyresö |
 
 **Kontaktperson Trygg Bil:** Mert Sarioglu  
-**Kontaktperson Sommarliden (alla ärenden):** Leon Russo — leon@hypbit.com
+**Kontaktperson Sommarliden (alla ärenden):** Winston — winston@hypbit.com
 
 ---
 
@@ -89,8 +89,8 @@ Alla signerade original förvaras hos Sommarliden Holding AB och är daterade 20
 
 **Alla frågor om faktura, avtal, fastighet eller annat:**
 
-Leon Russo  
-leon@hypbit.com  
+Winston  
+winston@hypbit.com  
 Sommarliden Holding AB
 
 ---
