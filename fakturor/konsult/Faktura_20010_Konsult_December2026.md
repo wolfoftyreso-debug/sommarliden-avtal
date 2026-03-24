@@ -35,7 +35,7 @@ Radiovägen 19, 135 48 Tyresö
 
 ## Betalningsinformation
 
-**Bankgiro:** [BANKGIRO]
+**Bankgiro:** Plusgiro 87 53 07-1 (Sommarliden Holding AB)
 **OCR/Referens:** Fakturanummer 20010
 **Förfallodatum:** 2027-01-01
 
