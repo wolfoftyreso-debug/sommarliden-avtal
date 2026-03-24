@@ -434,7 +434,7 @@ def md_to_html(md_text, doc_type="generic", title="", ref=""):
     header_html = f"""
 <div class="doc-header">
   <div class="company-name">Sommarliden Holding AB</div>
-  <div class="company-meta">Org.nr 559141-7042 &nbsp;·&nbsp; Åvägen 9, 135 48 Tyresö &nbsp;·&nbsp; leon@hypbit.com</div>
+  <div class="company-meta">Org.nr 559141-7042 &nbsp;·&nbsp; Åvägen 9, 135 48 Tyresö &nbsp;·&nbsp; erik@hypbit.com</div>
   <div class="doc-title">{title}</div>
   {'<div class="doc-subtitle">Avtalsnr: ' + ref + '</div>' if ref else ''}
 </div>
