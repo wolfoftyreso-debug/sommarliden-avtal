@@ -1,0 +1,2498 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AMOS PRO v1777335919</title>
+<style>
+  :root {
+    --bg: #FAF9F7;
+    --surface: #F0EDE8;
+    --border: #E0DBD4;
+    --text: #1A1814;
+    --text2: #8A8278;
+    --accent: #C96A3A;
+    --accent2: #E8845A;
+    --panel: #FFFFFF;
+    --dark: #1A1814;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100dvh; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro Text', sans-serif; overflow: hidden; }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--bg);
+  }
+  .header-btn {
+    width: 40px; height: 40px; border-radius: 50%; background: var(--surface);
+    border: none; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text2);
+  }
+  .header-btn:active { background: var(--border); }
+  .model-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: none; border-radius: 20px;
+    padding: 8px 16px; cursor: pointer; color: var(--text); font-size: 15px; font-weight: 600;
+  }
+  .model-pill svg { color: var(--text2); }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex-direction: column; height: calc(100dvh - 68px); }
+  .screen.active { display: flex; }
+
+  /* ── CHAT ── */
+  #screen-chat { position: relative; }
+  .chat-empty {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 32px; text-align: center;
+  }
+  .chat-empty svg rect {
+    /* AMOS icon */
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.7;transform:scale(0.95)} }
+  .chat-empty h2 { font-size: 22px; font-weight: 500; color: var(--text); line-height: 1.35; }
+
+  .chat-messages { flex: 1; overflow-y: auto; padding: 12px 16px calc(80px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px; }
+  .msg { display: flex; flex-direction: column; }
+  .msg.user { align-items: flex-end; }
+  .msg.amos { align-items: flex-start; }
+  .bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.55; max-width: 86%; }
+  .user .bubble { background: var(--dark); color: #fff; border-radius: 18px 18px 4px 18px; }
+  .amos .bubble { background: var(--panel); border: 1px solid var(--border); border-radius: 18px 18px 18px 4px; color: var(--text); }
+  .amos .bubble strong { color: var(--accent); }
+  .msg-time { font-size: 11px; color: var(--text2); margin-top: 4px; padding: 0 4px; }
+  .amos-thinking {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  }
+  .amos-thinking video {
+    width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+    border: 2px solid var(--border);
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+  .amos-thinking-text {
+    font-size: 13px; color: var(--text2); font-style: italic;
+    animation: fade-text 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 rgba(201,106,58,.3)} 50%{box-shadow:0 0 0 8px rgba(201,106,58,0)} }
+  @keyframes fade-text { 0%,100%{opacity:.5} 50%{opacity:1} }
+  /* behåll gamla för fallback */
+  .thinking-bub { display: flex; gap: 5px; padding: 14px 16px; }
+  .thinking-bub span { width: 8px; height: 8px; background: var(--text2); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .thinking-bub span:nth-child(2) { animation-delay: .2s; }
+  .thinking-bub span:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+
+  /* ── INPUT BAR ── */
+  .input-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--bg);
+  }
+  .input-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .input-box textarea {
+    border: none; outline: none; background: transparent; color: var(--text);
+    padding: 14px 16px 0; font-size: 16px; font-family: inherit; line-height: 1.45;
+    resize: none; min-height: 24px; max-height: 120px;
+  }
+  .input-box textarea::placeholder { color: var(--text2); }
+  .input-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px 12px;
+  }
+  .input-left { display: flex; gap: 4px; align-items: center; }
+  .act-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none; background: none;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: var(--text2); font-size: 20px; transition: background .15s;
+  }
+  .act-btn:active { background: var(--surface); }
+  .voice-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: var(--dark); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform .1s;
+  }
+  .voice-btn:active { transform: scale(0.92); }
+  .voice-btn.recording { background: var(--accent); }
+  .send-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: none;
+    background: var(--dark); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform .1s; display: none;
+  }
+  .send-btn.visible { display: flex; }
+  .send-btn:active { transform: scale(0.92); }
+
+  /* ── SIDEBAR DRAWER ── */
+  #sidebar-overlay { display: none; position: fixed; inset: 0; background: #0005; z-index: 500; }
+  #sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 80%; max-width: 320px;
+    background: var(--panel); z-index: 501; transform: translateX(-100%); transition: transform .3s;
+    display: flex; flex-direction: column; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    overflow-y: auto;
+  }
+  #sidebar.open { transform: translateX(0); }
+  .sb-header { padding: 20px 20px 12px; border-bottom: 1px solid var(--border); }
+  .sb-logo { font-size: 18px; font-weight: 700; }
+  .sb-logo span { color: var(--accent); }
+  .sb-user { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .sb-section { padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .sb-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 20px 8px; }
+  .sb-item {
+    display: flex; align-items: center; gap: 14px; padding: 13px 20px;
+    font-size: 15px; color: var(--text); cursor: pointer; transition: background .1s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .sb-item:active { background: var(--surface); }
+  .sb-item .sb-icon { font-size: 20px; width: 28px; text-align: center; }
+  .sb-item.active { color: var(--accent); background: #C96A3A10; }
+
+  /* ── MODEL PICKER ── */
+  #model-overlay { display: none; position: fixed; inset: 0; background: #0005; z-index: 600; }
+  #model-sheet {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel);
+    border-radius: 20px 20px 0 0; padding: 8px 0 calc(16px + env(safe-area-inset-bottom));
+    z-index: 601; transform: translateY(100%); transition: transform .25s;
+  }
+  .model-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 24px; cursor: pointer; border: none; background: none; width: 100%;
+  }
+  .model-item:active { background: var(--surface); }
+  .model-name { font-size: 16px; font-weight: 600; color: var(--text); }
+  .model-desc { font-size: 13px; color: var(--text2); margin-top: 2px; text-align: left; }
+  .model-check { color: var(--accent); font-size: 20px; }
+
+  /* ── OTHER SCREENS ── */
+  .screen-inner { flex: 1; overflow-y: auto; padding: 0 0 calc(env(safe-area-inset-bottom)); }
+  .section-title { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; padding: 16px 16px 8px; }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 14px 14px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px; position: relative; overflow: hidden; cursor: pointer; }
+  .kpi::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; border-radius:3px 3px 0 0; }
+  .kpi.a::before { background: var(--accent); }
+  .kpi.g::before { background: var(--green); }
+  .kpi.y::before { background: var(--yellow); }
+  .kpi-label { font-size: 10px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 20px; font-weight: 700; }
+  .kpi-badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; margin-top: 5px; }
+  .ok { background: #22c55e20; color: var(--green); }
+  .warn { background: #f59e0b20; color: var(--yellow); }
+
+  .list-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border)60; cursor: pointer; }
+  .list-item:last-child { border: none; }
+  .list-left { display: flex; align-items: center; gap: 12px; }
+  .list-icon { font-size: 22px; width: 36px; text-align: center; }
+  .list-name { font-weight: 600; font-size: 15px; }
+  .list-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .list-right { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .status-dot.warn { background: var(--yellow); }
+
+  /* Attach + expense modal (same as before but light theme) */
+  .attach-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 16px; }
+  .attach-tile { background: var(--surface); border-radius: 14px; padding: 18px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; transition: all .15s; }
+  .attach-tile:active { background: var(--border); }
+  .attach-tile span { font-size: 13px; font-weight: 600; color: var(--text); }
+  .attach-row { display: flex; align-items: center; gap: 14px; padding: 15px 20px; border-top: 1px solid var(--border)40; cursor: pointer; background: none; border-left: none; border-right: none; border-bottom: none; width: 100%; }
+  .attach-row:active { background: var(--surface); }
+  .attach-row-icon { font-size: 20px; width: 28px; text-align: center; }
+  .attach-row-label { flex: 1; font-size: 16px; color: var(--text); text-align: left; }
+  .attach-toggle { width: 50px; height: 28px; border-radius: 14px; background: var(--border); position: relative; transition: background .2s; cursor: pointer; border: none; }
+  .attach-toggle.on { background: var(--accent); }
+  .attach-toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; }
+  .attach-toggle.on::after { transform: translateX(22px); }
+  .exp-field { margin-bottom: 14px; }
+  .exp-label { font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .exp-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 13px 16px; font-size: 16px; outline: none; font-family: inherit; }
+  .exp-input:focus { border-color: var(--accent); }
+  .exp-row { display: flex; gap: 8px; }
+  .exp-row .exp-field { flex: 1; }
+  .exp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .exp-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text2); transition: all .15s; }
+  .exp-chip.selected { background: #C96A3A15; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .exp-submit { width: 100%; background: var(--dark); border: none; border-radius: 14px; color: #fff; padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+  .sheet-base { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel); border-radius: 20px 20px 0 0; z-index: 601; transform: translateY(100%); transition: transform .28s; padding-bottom: calc(16px + env(safe-area-inset-bottom)); max-height: 92dvh; overflow-y: auto; }
+  .sheet-handle { text-align: center; padding: 12px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+  .sheet-close { background: var(--surface); border: none; border-radius: 50%; width: 34px; height: 34px; color: var(--text2); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .sheet-title { font-weight: 700; font-size: 17px; }
+
+  .sb-nav-item {
+    display: flex; align-items: center; gap: 14px; width: 100%;
+    padding: 12px 14px; border-radius: 10px; border: none; background: none;
+    color: var(--text); font-size: 16px; cursor: pointer; text-align: left;
+    transition: background .1s;
+  }
+  .sb-nav-item:active { background: var(--border); }
+  .sb-nav-item.active { background: var(--surface); color: var(--accent); }
+  .recent-item {
+    display: flex; align-items: flex-start; padding: 10px 14px; border-radius: 10px;
+    cursor: pointer; color: var(--text); transition: background .1s;
+    width: 100%; border: none; background: none; text-align: left;
+    overflow: hidden;
+  }
+  .recent-item:active { background: var(--border); }
+  .recent-item.active { background: var(--surface); color: var(--accent); font-weight: 600; }
+
+
+  .toast {
+    position: fixed; top: calc(env(safe-area-inset-top) + 70px); left: 50%; transform: translateX(-50%);
+    background: var(--dark); color: #fff; border-radius: 12px;
+    padding: 12px 18px; font-size: 14px; z-index: 999;
+    max-width: 88%; text-align: center; line-height: 1.4;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    opacity: 0; transition: opacity .25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+
+  .api-row { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border)40; }
+  .api-row:last-child { border-bottom:none; }
+  .api-left { flex:1; }
+  .api-name { font-weight:600; font-size:14px; }
+  .api-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+  .api-status { font-size:13px; font-weight:600; min-width:60px; text-align:right; }
+  .api-status.ok { color:var(--green); }
+  .api-status.error { color:var(--red); }
+  .api-status.checking { color:var(--text2); }
+
+
+  .api-menu-btn { background:none; border:none; color:var(--text2); font-size:18px; cursor:pointer; padding:4px 8px; border-radius:8px; }
+  .api-menu-btn:active { background:var(--surface); }
+  .key-box { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .key-val { flex:1; font-family:monospace; font-size:12px; color:var(--text2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .key-reveal { background:none; border:none; color:var(--accent); font-size:12px; cursor:pointer; font-weight:600; flex-shrink:0; }
+  .key-copy { background:none; border:none; color:var(--text2); font-size:12px; cursor:pointer; flex-shrink:0; }
+  .detail-row { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border)40; font-size:14px; }
+  .detail-row:last-child { border:none; }
+
+
+  .msg-actions { display:flex; align-items:center; gap:4px; padding:4px 4px 0; }
+  .msg-act {
+    width:34px; height:34px; border-radius:8px; border:none; background:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text2); transition:background .15s;
+  }
+  .msg-act:active { background:var(--border); }
+  .msg-act.active-pos { color:var(--green); }
+  .msg-act.active-neg { color:var(--red); }
+
+</style>
+
+<style>
+.input-box { margin-bottom: 10px !important; }
+.input-actions { border-top: 1px solid var(--border) !important; }
+textarea#input { min-height: 48px !important; }
+</style>
+
+<style>
+#chat-messages, .chat-messages, .messages, [id*="messages"], [class*="messages"] {
+  padding-bottom: 140px !important;
+}
+</style>
+
+
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <button class="header-btn" onclick="openSidebar()">
+    <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/>
+    </svg>
+  </button>
+  <button class="model-pill" onclick="openModelPicker()">
+    <span id="model-label">AMOS PRO</span>
+    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 1 6 7 11 1"/></svg>
+  </button>
+  <button class="header-btn" onclick="openNotifications()" style="position:relative">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <span id="notif-badge" style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--accent);border-radius:50%;border:2px solid var(--bg);display:none"></span>
+  </button>
+</div>
+
+<!-- SCREEN: CHAT -->
+<div class="screen active" id="screen-chat">
+  <div id="chat-empty" class="chat-empty">
+
+    <h2 id="welcome-text" style="font-size:21px;font-weight:500;color:var(--text);line-height:1.4">Hej Winston,<br>hur kan jag hjälpa dig idag?</h2>
+    <p style="font-size:14px;color:var(--text2);margin-top:8px">CFO · Wavult Group</p>
+  </div>
+  <div class="chat-messages" id="messages" style="display:none"></div>
+</div>
+
+
+<!-- SCREEN: API MONITOR -->
+<div class="screen" id="screen-apis">
+  <div class="screen-inner">
+    <div class="section-title" style="padding-top:14px;display:flex;align-items:center;justify-content:space-between">
+      <span>API Monitor</span>
+      <button onclick="checkAllAPIs()" style="background:var(--accent);border:none;border-radius:8px;padding:5px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer">↻ Kolla nu</button>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🏗️ Wavult Infrastruktur</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://api.wavult.com/health" data-name="api.wavult.com">
+        <div class="api-left">
+          <div class="api-name">api.wavult.com</div>
+          <div class="api-sub">Wavult Core API</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('api.wavult.com','https://api.wavult.com/health','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://amos.wavult.com/health" data-name="amos.wavult.com">
+        <div class="api-left">
+          <div class="api-name">amos.wavult.com</div>
+          <div class="api-sub">AMOS Intelligence</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('amos.wavult.com','https://amos.wavult.com/health','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://vyra.wavult.com" data-name="vyra.wavult.com">
+        <div class="api-left">
+          <div class="api-name">vyra.wavult.com</div>
+          <div class="api-sub">VYRA FPS Platform</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('vyra.wavult.com','https://vyra.wavult.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://os.wavult.com" data-name="os.wavult.com">
+        <div class="api-left">
+          <div class="api-name">os.wavult.com</div>
+          <div class="api-sub">Wavult OS</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('os.wavult.com','https://os.wavult.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://git.wavult.com" data-name="git.wavult.com">
+        <div class="api-left">
+          <div class="api-name">git.wavult.com</div>
+          <div class="api-sub">Gitea — kodrepo</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('git.wavult.com','https://git.wavult.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://n8n.wavult.com" data-name="n8n.wavult.com">
+        <div class="api-left">
+          <div class="api-name">n8n.wavult.com</div>
+          <div class="api-sub">Automation Engine</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('n8n.wavult.com','https://n8n.wavult.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://quixzoom.com" data-name="quixzoom.com">
+        <div class="api-left">
+          <div class="api-name">quixzoom.com</div>
+          <div class="api-sub">quiXzoom crowdsourced</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('quixzoom.com','https://quixzoom.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://monitoring.wavult.com" data-name="monitoring.wavult.com">
+        <div class="api-left">
+          <div class="api-name">monitoring.wavult.com</div>
+          <div class="api-sub">Grafana + Prometheus</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('monitoring.wavult.com','https://monitoring.wavult.com','',false)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🤖 AI & ML</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://api.openai.com/v1/models" data-name="OpenAI">
+        <div class="api-left">
+          <div class="api-name">OpenAI</div>
+          <div class="api-sub">Whisper STT · GPT</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('OpenAI','https://api.openai.com/v1/models','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://api.anthropic.com" data-name="Anthropic Claude">
+        <div class="api-left">
+          <div class="api-name">Anthropic Claude</div>
+          <div class="api-sub">Claude Sonnet — fallback</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Anthropic Claude','https://api.anthropic.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://generativelanguage.googleapis.com" data-name="Google Gemini">
+        <div class="api-left">
+          <div class="api-name">Google Gemini</div>
+          <div class="api-sub">Gemini 2.5 Pro — vision</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Google Gemini','https://generativelanguage.googleapis.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://api.x.ai" data-name="xAI Grok">
+        <div class="api-left">
+          <div class="api-name">xAI Grok</div>
+          <div class="api-sub">Grok-3 — reasoning</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('xAI Grok','https://api.x.ai','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://api.perplexity.ai" data-name="Perplexity">
+        <div class="api-left">
+          <div class="api-name">Perplexity</div>
+          <div class="api-sub">Sonar Pro — realtidssök</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Perplexity','https://api.perplexity.ai','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://api.elevenlabs.io/v1/user" data-name="ElevenLabs">
+        <div class="api-left">
+          <div class="api-name">ElevenLabs</div>
+          <div class="api-sub">TTS · Sarah</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('ElevenLabs','https://api.elevenlabs.io/v1/user','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">AWS Bedrock</div>
+          <div class="api-sub">Qwen3 · Nova Pro · DeepSeek</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status ok">✅ Online</div>
+          <button class="api-menu-btn" onclick="openApiDetail('AWS Bedrock','','',true)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">📱 Kommunikation</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://api.46elks.com/a1/me" data-name="46elks">
+        <div class="api-left">
+          <div class="api-name">46elks</div>
+          <div class="api-sub">SMS · +46766862613</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('46elks','https://api.46elks.com/a1/me','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Telegram Bot</div>
+          <div class="api-sub">Bernt-bot · Notifikationer</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status ok">✅ Online</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Telegram Bot','','',true)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://outgoing.loopia.se" data-name="Loopia SMTP">
+        <div class="api-left">
+          <div class="api-name">Loopia SMTP</div>
+          <div class="api-sub">E-post utgående</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Loopia SMTP','https://outgoing.loopia.se','',false)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🌐 DNS & Infrastruktur</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://api.cloudflare.com/client/v4/user" data-name="Cloudflare">
+        <div class="api-left">
+          <div class="api-name">Cloudflare</div>
+          <div class="api-sub">DNS · CDN (migration pågår)</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Cloudflare','https://api.cloudflare.com/client/v4/user','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">AWS Route53</div>
+          <div class="api-sub">wavult.com · quixzoom.com</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status ok">✅ Online</div>
+          <button class="api-menu-btn" onclick="openApiDetail('AWS Route53','','',true)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">AWS ECS</div>
+          <div class="api-sub">wavult cluster · eu-north-1</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status ok">✅ Online</div>
+          <button class="api-menu-btn" onclick="openApiDetail('AWS ECS','','',true)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">💳 Betalning & Bank</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Nordea Open Banking</div>
+          <div class="api-sub">LandveX AB · SEK</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Ej kopplad</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Nordea Open Banking','','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Revolut Business</div>
+          <div class="api-sub">Multi-valuta · SEK/EUR/USD/AED</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Ej kopplad</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Revolut Business','','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Stripe</div>
+          <div class="api-sub">QuiXzoom Inc · Delaware</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Ej aktiv</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Stripe','','',false)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">⚡ UAPIX Provider Store</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://api.uapix.com/health" data-name="UAPIX Vision">
+        <div class="api-left">
+          <div class="api-name">UAPIX Vision</div>
+          <div class="api-sub">Computer vision · OCR · Object detection</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('UAPIX Vision','https://api.uapix.com/health','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Appify</div>
+          <div class="api-sub">Web scraping · Data extraction</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Konfigurera</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Appify','','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">Adobe Sign</div>
+          <div class="api-sub">E-signering · PDF-hantering</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Konfigurera</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Adobe Sign','','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row">
+        <div class="api-left">
+          <div class="api-name">QuickZone</div>
+          <div class="api-sub">Geo-fencing · Location intelligence</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status warn">⚠️ Konfigurera</div>
+          <button class="api-menu-btn" onclick="openApiDetail('QuickZone','','',false)">···</button>
+        </div>
+      </div>
+    </div>
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">📋 Projekthantering</div>
+    <div style="margin:0 14px;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div class="api-row" data-url="https://jira.wavult.com" data-name="Plane">
+        <div class="api-left">
+          <div class="api-name">Plane</div>
+          <div class="api-sub">Projektstyrning · tickets</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('Plane','https://jira.wavult.com','',false)">···</button>
+        </div>
+      </div>
+      <div class="api-row" data-url="https://api.github.com" data-name="GitHub API">
+        <div class="api-left">
+          <div class="api-name">GitHub API</div>
+          <div class="api-sub">Open source repo-hämtning</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="api-status checking">⋯</div>
+          <button class="api-menu-btn" onclick="openApiDetail('GitHub API','https://api.github.com','',false)">···</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: KPI -->
+<div class="screen" id="screen-kpi">
+  <div class="screen-inner">
+    <div class="section-title" style="padding-top:14px">Nyckeltal · Uppdateras live</div>
+
+    <!-- ROW 1: Likviditet -->
+    <div style="padding:0 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">💰 Likviditet</div>
+    <div class="kpi-grid" style="padding:0 14px 10px">
+      <div class="kpi g" onclick="askChat('Ge mig fullständig Wavult banksaldo-status för Nordea och Revolut');showScreen('chat')">
+        <div class="kpi-label">Nordea + Revolut</div>
+        <div class="kpi-value" style="font-size:15px">✅ Kopplad</div>
+        <span class="kpi-badge warn">✅ Aktiverad</span>
+      </div>
+      <div class="kpi a" onclick="askChat('Vad behöver Johan göra för att ge AWS Cost Explorer-access till AMOS PRO?');showScreen('chat')">
+        <div class="kpi-label">AWS Kostnad (apr)</div>
+        <div class="kpi-value" id="aws-cost-val" style="font-size:15px">Väntar IAM</div>
+        <span class="kpi-badge warn" id="aws-cost-badge">Johan fixar</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Beräkna burn rate och runway för Wavult Group baserat på kända kostnader');showScreen('chat')" style="grid-column:span 2">
+        <div class="kpi-label">Burn Rate</div>
+        <div class="kpi-value" style="font-size:16px">~13 000–45 000 kr/mån</div>
+        <span class="kpi-badge warn">Estimerat — data saknas</span>
+      </div>
+    </div>
+
+    <!-- ROW 2: Bolagsstruktur -->
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🏢 Bolag & Compliance</div>
+    <div class="kpi-grid" style="padding:0 14px 10px">
+      <div class="kpi a" onclick="showScreen('bolag')">
+        <div class="kpi-label">Aktiva bolag</div>
+        <div class="kpi-value">7</div>
+        <span class="kpi-badge ok">Registrerade</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Vad är statusen för EIN-ansökningar för QuiXzoom Inc och Landvex Inc?');showScreen('chat')">
+        <div class="kpi-label">EIN-ansökningar</div>
+        <div class="kpi-value">2</div>
+        <span class="kpi-badge warn">Inväntas</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Vad är statusen för Wavult Group DMCC formation i Dubai?');showScreen('chat')">
+        <div class="kpi-label">DMCC Dubai</div>
+        <div class="kpi-value" style="font-size:16px">Formation</div>
+        <span class="kpi-badge warn">Startad apr 2026</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Vad behöver göras med Sommarliden Holding AB SEB-ärendet?');showScreen('chat')">
+        <div class="kpi-label">SEB-ärende</div>
+        <div class="kpi-value" style="font-size:14px">Sommarliden</div>
+        <span class="kpi-badge warn">Ej löst</span>
+      </div>
+    </div>
+
+    <!-- ROW 3: Infrastruktur -->
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">⚙️ Infrastruktur</div>
+    <div class="kpi-grid" style="padding:0 14px 10px">
+      <div class="kpi g" onclick="askChat('Ge mig komplett status för Wavult AWS-infrastruktur');showScreen('chat')">
+        <div class="kpi-label">AWS Tjänster</div>
+        <div class="kpi-value">4</div>
+        <span class="kpi-badge ok">Online</span>
+      </div>
+      <div class="kpi g" onclick="askChat('Vad är AMOS driftstatus och uptime?');showScreen('chat')">
+        <div class="kpi-label">AMOS Uptime</div>
+        <div class="kpi-value">Live</div>
+        <span class="kpi-badge ok">amos.wavult.com</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Vad är statusen på Cloudflare-migrationen till AWS Route53?');showScreen('chat')" style="grid-column:span 2">
+        <div class="kpi-label">DNS-migration → Route53</div>
+        <div class="kpi-value" style="font-size:15px">Väntar Loopia NS-byte</div>
+        <span class="kpi-badge warn">Johan inväntas</span>
+      </div>
+    </div>
+
+    <!-- ROW 4: Go-to-market -->
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🚀 Go-to-Market</div>
+    <div class="kpi-grid" style="padding:0 14px 10px">
+      <div class="kpi a" onclick="askChat('Hur lång tid är det kvar till quiXzoom-launch i mitten av juni 2026?');showScreen('chat')">
+        <div class="kpi-label">quiXzoom Launch</div>
+        <div class="kpi-value" id="days-to-launch">~49 dagar</div>
+        <span class="kpi-badge warn">Juni 2026</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Vad behöver göras för att rekrytera 50 zoomers i Stockholm inför launch?');showScreen('chat')">
+        <div class="kpi-label">Zoomers rekryterade</div>
+        <div class="kpi-value">0 / 50</div>
+        <span class="kpi-badge warn">Stockholm</span>
+      </div>
+    </div>
+
+    <!-- ROW 5: Team -->
+    <div style="padding:4px 14px 4px;font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px">🌴 Team Thailand</div>
+    <div class="kpi-grid" style="padding:0 14px 20px">
+      <div class="kpi a">
+        <div class="kpi-label">Teamstorlek</div>
+        <div class="kpi-value">5 pers</div>
+        <span class="kpi-badge ok">Phuket</span>
+      </div>
+      <div class="kpi y" onclick="askChat('Hur länge är teamet kvar i Thailand och vad är planen?');showScreen('chat')">
+        <div class="kpi-label">Workcamp</div>
+        <div class="kpi-value" id="days-in-thai">~16 dagar</div>
+        <span class="kpi-badge ok">Sugar Villas</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: KONTON -->
+<div class="screen" id="screen-konton">
+  <div class="screen-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0"><div class="section-title" style="padding:0">Bankkonton</div><span onclick="showScreen('apis-status')" style="font-size:11px;color:var(--text2);cursor:pointer;padding:4px 8px;border:1px solid var(--border);border-radius:6px;margin-right:4px">API:er ↗</span></div>
+    <div class="list-item" onclick="askChat('Hur kopplar jag Nordea Open Banking API till AMOS PRO för live-saldon?')">
+      <div class="list-left">
+        <div class="list-icon" style="background:#0000AA20;border-radius:10px;width:42px;height:42px;font-size:18px;font-weight:900;color:#0000AA;display:flex;align-items:center;justify-content:center">N</div>
+        <div><div class="list-name">Nordea</div><div class="list-sub">LandveX AB · SEK</div></div>
+      </div>
+      <div class="list-right"><div class="status-dot warn"></div><span style="color:var(--yellow)" id="nordea-balance" style="color:#22c55e;font-weight:600">✅ Kopplad</span></div>
+    </div>
+    <div class="list-item" onclick="askChat('Hur kopplar jag Revolut Business API till AMOS PRO?')">
+      <div class="list-left">
+        <div class="list-icon" style="background:#2563EB20;border-radius:10px;width:42px;height:42px;font-size:20px;display:flex;align-items:center;justify-content:center">🔄</div>
+        <div><div class="list-name">Revolut Business</div><div class="list-sub">Wavult Group · SEK/EUR/USD/AED</div></div>
+      </div>
+      <div class="list-right"><div class="status-dot warn"></div><span style="color:var(--yellow)" id="revolut-balance" style="color:#22c55e;font-weight:600">✅ Kopplad</span></div>
+    </div>
+    <div class="list-item" onclick="askChat('Vilka bankkonton bör Wavult Group ha optimalt?')">
+      <div class="list-left">
+        <div class="list-icon" style="background:var(--surface);border-radius:10px;width:42px;height:42px;font-size:22px;display:flex;align-items:center;justify-content:center;color:var(--text2)">+</div>
+        <div><div class="list-name" style="color:var(--accent)">Lägg till konto</div><div class="list-sub">Fråga AMOS om setup</div></div>
+      </div>
+      <div class="list-right">›</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: BOLAG -->
+<div class="screen" id="screen-bolag">
+  <div class="screen-inner" style="padding:0 14px 20px">
+
+    <div style="padding:16px 0 12px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px">Wavult Group Bolagsstruktur</div>
+
+    <!-- HOLDING — TOP -->
+    <div onclick="askChat('Berätta om Wavult Group DMCC: holding, formation, Dubai DMCC Free Zone, skattestruktur');showScreen('chat')"
+         style="background:var(--dark);color:#fff;border-radius:14px;padding:16px 18px;cursor:pointer;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:26px">🇦🇪</span>
+        <div>
+          <div style="font-weight:700;font-size:16px">Wavult Group DMCC</div>
+          <div style="font-size:12px;opacity:0.7;margin-top:2px">Holdingbolag · Dubai Free Zone · AED</div>
+        </div>
+        <div style="margin-left:auto;font-size:12px;opacity:0.6">Formation pågår →</div>
+      </div>
+    </div>
+
+    <!-- Linje ner -->
+    <div style="display:flex;justify-content:center"><div style="width:2px;height:16px;background:var(--border)"></div></div>
+
+    <!-- DMCC-dotterbolag på samma nivå -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px">
+      <div onclick="askChat('Berätta om DevOps Company DMCC Free Zone Dubai, syfte och status')" style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer">
+        <div style="font-size:20px;margin-bottom:6px">🇦🇪</div>
+        <div style="font-weight:600;font-size:14px">DevOps Company</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">DMCC Free Zone</div>
+        <div style="display:inline-block;margin-top:6px;font-size:10px;background:#f59e0b20;color:var(--yellow);padding:2px 8px;border-radius:20px">Setup</div>
+      </div>
+      <div onclick="askChat('Berätta om FinanceCo DMCC Free Zone Dubai, treasury-syfte och status')" style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer">
+        <div style="font-size:20px;margin-bottom:6px">🇦🇪</div>
+        <div style="font-weight:600;font-size:14px">FinanceCo</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:3px">DMCC Free Zone</div>
+        <div style="display:inline-block;margin-top:6px;font-size:10px;background:#f59e0b20;color:var(--yellow);padding:2px 8px;border-radius:20px">Setup</div>
+      </div>
+    </div>
+
+    <!-- Linje ner -->
+    <div style="display:flex;justify-content:center"><div style="width:2px;height:16px;background:var(--border)"></div></div>
+
+    <!-- Rörelsedrivande bolag -->
+    <div style="display:flex;flex-direction:column;gap:8px">
+
+      <!-- LandveX-gruppen -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div onclick="askChat('Berätta om LandveX AB: org.nr 559141-7042, Sverige, verksamhet, konton, status');showScreen('chat')"
+             style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span style="font-size:24px">🇸🇪</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:15px">LandveX AB</div>
+            <div style="font-size:12px;color:var(--text2)">559141-7042 · Sverige · SEK</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--green)"></div><span style="font-size:12px;color:var(--green)">Aktiv</span></div>
+        </div>
+        <div onclick="askChat('Berätta om Landvex Inc Texas LLC: EIN-status, syfte, USA-marknad');showScreen('chat')"
+             style="display:flex;align-items:center;gap:12px;padding:12px 16px 12px 32px;cursor:pointer;background:var(--bg)">
+          <div style="width:16px;border-left:2px solid var(--border);border-bottom:2px solid var(--border);height:16px;margin-right:4px;flex-shrink:0;position:relative;top:-4px"></div>
+          <span style="font-size:20px">🇺🇸</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">Landvex Inc</div>
+            <div style="font-size:11px;color:var(--text2)">Texas LLC · USD</div>
+          </div>
+          <span style="font-size:11px;color:var(--yellow)">EIN inväntas</span>
+        </div>
+      </div>
+
+      <!-- QuiXzoom-gruppen -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div onclick="askChat('Berätta om QuiXzoom Inc Delaware Stripe Atlas: EIN-status, syfte, USA-launch');showScreen('chat')"
+             style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border)">
+          <span style="font-size:24px">🇺🇸</span>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:15px">QuiXzoom Inc</div>
+            <div style="font-size:12px;color:var(--text2)">Delaware · Stripe Atlas · USD</div>
+          </div>
+          <span style="font-size:11px;color:var(--yellow)">EIN inväntas</span>
+        </div>
+        <div onclick="askChat('Berätta om Quixzoom UAB Litauen: planerad EU-expansion, registration, status');showScreen('chat')"
+             style="display:flex;align-items:center;gap:12px;padding:12px 16px 12px 32px;cursor:pointer;background:var(--bg)">
+          <div style="width:16px;border-left:2px solid var(--border);border-bottom:2px solid var(--border);height:16px;margin-right:4px;flex-shrink:0;position:relative;top:-4px"></div>
+          <span style="font-size:20px">🇱🇹</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">Quixzoom UAB</div>
+            <div style="font-size:11px;color:var(--text2)">Litauen · EUR</div>
+          </div>
+          <span style="font-size:11px;color:var(--yellow)">Planerad</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- INPUT BAR -->
+<div class="input-wrap" id="input-wrap">
+  <div class="input-box">
+    <textarea id="input" placeholder="Skriv en finansfråga..." rows="1"
+      oninput="onInput(this)"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}"></textarea>
+    <div class="input-actions">
+      <div class="input-left">
+        <button class="act-btn" onclick="openAttach()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="send-btn" id="send-btn" onclick="send()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
+        <button class="voice-btn" id="voice-btn" onclick="toggleSpeech()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div id="sidebar">
+  <div style="padding: calc(env(safe-area-inset-top) + 20px) 20px 0; display:flex; align-items:center; justify-content:space-between">
+    <div style="font-size:24px;font-weight:700">AMOS <span style="color:var(--accent)">PRO</span></div>
+    <button class="header-btn" onclick="closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+  </div>
+
+  <!-- Quick nav -->
+  <div style="padding: 16px 12px 8px; display:flex; flex-direction:column; gap:2px">
+    <button class="sb-nav-item" id="sb-chat" onclick="newChat();closeSidebar()" title="Ny konversation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Konversationer
+    </button>
+    <button class="sb-nav-item" onclick="showScreen('kpi');closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      KPIer & Nyckeltal
+    </button>
+    <button class="sb-nav-item" onclick="showScreen('konton');closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      Bankkonton
+    </button>
+    <button class="sb-nav-item" onclick="showScreen('apis');closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      API Monitor
+    </button>
+    <button class="sb-nav-item" onclick="showScreen('bolag');closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Bolagsstruktur
+    </button>
+    <button class="sb-nav-item" onclick="showScreen('inkomster');closeSidebar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          Inkommande
+        </button>
+        <button class="sb-nav-item" onclick="showScreen('apis-status');closeSidebar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+          API:er
+        </button>
+        <button class="sb-nav-item" onclick="showScreen('atgarder');closeSidebar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Åtgärder
+        </button>
+        <button class="sb-nav-item" onclick="openExpenseForm();closeSidebar()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Registrera kostnad
+    </button>
+  </div>
+
+  <!-- Recents -->
+  <div style="padding: 8px 20px 6px; font-size:13px; color:var(--text2); font-weight:500">Senaste</div>
+  <div id="recents-list" style="flex:1;overflow-y:auto;padding: 0 12px">
+    <div style="padding:20px;text-align:center;color:var(--text2);font-size:14px" id="recents-empty">Inga sparade konversationer än</div>
+  </div>
+
+  <!-- Bottom user -->
+  <div onclick="openProfile()" style="padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border); display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s" onmouseenter="this.style.background='var(--surface)'" onmouseleave="this.style.background=''">
+    <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px">WB</div>
+    <div>
+      <div style="font-size:14px;font-weight:600">Winston Bjarnemark</div>
+      <div style="font-size:12px;color:var(--text2)">CFO · Wavult Group</div>
+    </div>
+    <div style="margin-left:auto">
+      <button onclick="confirmLogout()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text2);font-size:13px;cursor:pointer">Logga ut</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODEL PICKER -->
+<div id="model-overlay" onclick="closeModelPicker()"></div>
+<div id="model-sheet" class="sheet-base">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeModelPicker()">✕</button>
+    <span class="sheet-title">Välj läge</span>
+    <div style="width:34px"></div>
+  </div>
+  <div style="padding: 8px 0;">
+    <button class="model-item" onclick="setModel('cfo')">
+      <div><div class="model-name">CFO-läge</div><div class="model-desc">Finansanalys, kostnader och bolagsstruktur</div></div>
+      <span class="model-check" id="check-cfo">✓</span>
+    </button>
+    <button class="model-item" onclick="setModel('operator')">
+      <div><div class="model-name">Operator</div><div class="model-desc">Operativ styrning och daglig drift</div></div>
+      <span class="model-check" id="check-operator" style="display:none">✓</span>
+    </button>
+    <button class="model-item" onclick="setModel('audit')">
+      <div><div class="model-name">Audit</div><div class="model-desc">Evidensbaserad granskning och verifiering</div></div>
+      <span class="model-check" id="check-audit" style="display:none">✓</span>
+    </button>
+    <button class="model-item" onclick="setModel('dev')">
+      <div><div class="model-name">Dev</div><div class="model-desc">Teknisk analys, arkitektur och kodutveckling</div></div>
+      <span class="model-check" id="check-dev" style="display:none">✓</span>
+    </button>
+  </div>
+</div>
+
+<!-- ATTACH MENU -->
+<div id="attach-overlay" onclick="closeAttach(event)" style="display:none;position:fixed;inset:0;background:#0005;z-index:400"></div>
+<div id="attach-sheet" class="sheet-base" style="display:none;z-index:401">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeAttach()">✕</button>
+    <span class="sheet-title">Lägg till</span>
+    <div style="width:34px"></div>
+  </div>
+  <div class="attach-grid">
+    <div class="attach-tile" onclick="attachCamera()">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span>Kamera</span>
+    </div>
+    <div class="attach-tile" onclick="attachPhoto()">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <span>Bilder</span>
+    </div>
+    <div class="attach-tile" onclick="attachFile()">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Alla filer</span>
+    </div>
+  </div>
+  <div style="margin: 0 16px; border-top: 1px solid var(--border);"></div>
+  <div class="attach-row" onclick="toggleWebSearch()" style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;cursor:pointer"><div style="display:flex;align-items:center;gap:14px"><span class="attach-row-icon">🌐</span><span class="attach-row-label">Realtidssökning</span></div><button id="websearch-toggle" class="attach-toggle on" onclick="event.stopPropagation();toggleWebSearch()"></button></div>
+  <button class="attach-row" onclick="openExpenseForm()"><span class="attach-row-icon">💸</span><span class="attach-row-label">Registrera kostnad</span><span style="color:var(--text2)">›</span></button>
+  <button class="attach-row" onclick="askChat('Generera fullständig finansiell auditrapport för Wavult Group');closeAttach()"><span class="attach-row-icon">📋</span><span class="attach-row-label">Begär auditrapport</span><span style="color:var(--text2)">›</span></button>
+  <button class="attach-row" onclick="askChat('Hjälp mig uppdatera budget för Wavult Group');closeAttach()"><span class="attach-row-icon">📊</span><span class="attach-row-label">Uppdatera budget</span><span style="color:var(--text2)">›</span></button>
+  <div style="height:8px"></div>
+</div>
+
+<!-- EXPENSE FORM -->
+<div id="expense-overlay" style="display:none;position:fixed;inset:0;background:#0006;z-index:500" onclick="closeExpense(event)">
+<div id="expense-sheet" class="sheet-base" style="z-index:501">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeExpense()">✕</button>
+    <span class="sheet-title">Registrera kostnad</span>
+    <div style="width:34px"></div>
+  </div>
+  <div style="padding:16px 20px 0">
+    <div class="exp-field">
+      <span class="exp-label">Kategori</span>
+      <div class="exp-chips" id="exp-category">
+        <div class="exp-chip selected" onclick="selectChip(this,'category')">🏨 Boende</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">🍜 Mat</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">✈️ Resa</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">🚗 Transport</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">💻 Tech</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">⚖️ Juridik</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">📱 Komm.</div>
+        <div class="exp-chip" onclick="selectChip(this,'category')">🎯 Övrigt</div>
+      </div>
+    </div>
+    <div class="exp-row">
+      <div class="exp-field"><span class="exp-label">Belopp</span><input type="number" class="exp-input" id="exp-amount" placeholder="0" inputmode="decimal"></div>
+      <div class="exp-field" style="max-width:110px"><span class="exp-label">Valuta</span><select class="exp-input" id="exp-currency"><option>SEK</option><option>THB</option><option>USD</option><option>EUR</option><option>AED</option></select></div>
+    </div>
+    <div class="exp-field">
+      <span class="exp-label">Bolag</span>
+      <div class="exp-chips" id="exp-entity">
+        <div class="exp-chip selected" onclick="selectChip(this,'entity')">🇸🇪 LandveX AB</div>
+        <div class="exp-chip" onclick="selectChip(this,'entity')">🇦🇪 DMCC</div>
+        <div class="exp-chip" onclick="selectChip(this,'entity')">🇺🇸 QuiXzoom</div>
+        <div class="exp-chip" onclick="selectChip(this,'entity')">👤 Utlägg</div>
+      </div>
+    </div>
+    <div class="exp-field"><span class="exp-label">Beskrivning</span><input type="text" class="exp-input" id="exp-desc" placeholder="Villa hyra april, Middag team..."></div>
+    <div class="exp-field"><span class="exp-label">Datum</span><input type="date" class="exp-input" id="exp-date"></div>
+    <div class="exp-field">
+      <span class="exp-label">Kvitto</span>
+      <div onclick="document.getElementById('exp-file').click()" style="background:var(--surface);border:1px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;color:var(--text2);font-size:14px" id="exp-file-label">📎 Bifoga kvitto (valfritt)</div>
+      <input type="file" id="exp-file" accept="image/*,.pdf" style="display:none" onchange="handleExpFile(this)">
+    </div>
+    <button class="exp-submit" onclick="submitExpense()">Registrera →</button>
+  </div>
+</div>
+</div>
+
+<input type="file" id="photo-input" accept="image/*,video/*" multiple style="display:none" onchange="handleAnyFile(this)">
+<input type="file" id="camera-input" accept="image/*,video/*" capture="environment" style="display:none" onchange="handleAnyFile(this)">
+<input type="file" id="file-input" accept="*/*" multiple style="display:none" onchange="handleAnyFile(this)">
+
+<script>
+const CHAT_URL = '/cfo/chat';
+
+// ── Sessions ──────────────────────────────────────────────────────────────────
+let currentSessionId = null;
+let currentMessages = [];
+
+async function loadRecents() {
+  try {
+    const r = await fetch('/cfo/sessions');
+    const d = await r.json();
+    const list = document.getElementById('recents-list');
+    const empty = document.getElementById('recents-empty');
+    if (!d.sessions?.length) { if(empty) empty.style.display='block'; return; }
+    if(empty) empty.style.display='none';
+    list.innerHTML = d.sessions.map(s => {
+      const d2 = new Date(s.updatedAt);
+      const now2 = new Date();
+      const isToday = d2.toDateString() === now2.toDateString();
+      const timeStr = isToday
+        ? d2.toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'})
+        : d2.toLocaleDateString('sv-SE', {day:'numeric',month:'short'});
+      return `<button class="recent-item ${s.id===currentSessionId?'active':''}" onclick="loadSession('${s.id}');closeSidebar()">
+        <div style="flex:1;min-width:0">
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px">${s.title.slice(0,38)}${s.title.length>38?'...':''}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">${s.msgCount} meddelanden · ${timeStr}</div>
+        </div>
+      </button>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function newChat() {
+  const r = await fetch('/cfo/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'Ny konversation'})});
+  const d = await r.json();
+  currentSessionId = d.session.id;
+  currentMessages = [];
+  // Rensa chat
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('messages').style.display = 'none';
+  const empty = document.getElementById('chat-empty');
+  if(empty) empty.style.display = 'flex';
+  showScreen('chat');
+}
+
+async function loadSession(id) {
+  const r = await fetch('/cfo/sessions/' + id);
+  const d = await r.json();
+  if (!d.ok) return;
+  currentSessionId = id;
+  currentMessages = d.session.messages || [];
+  
+  // Återbygg chat
+  const msgs = document.getElementById('messages');
+  const empty = document.getElementById('chat-empty');
+  msgs.innerHTML = '';
+  if (currentMessages.length) {
+    if(empty) empty.style.display='none';
+    msgs.style.display='flex';
+    currentMessages.forEach(m => {
+      const div=document.createElement('div');
+      div.className='msg '+m.role;
+      div.innerHTML=`<div class="bubble">${m.role==='user'?m.content.replace(/</g,'&lt;'):renderMd(m.content)}</div><div class="msg-time">${m.role==='user'?'Du':'AMOS PRO'}</div>`;
+      msgs.appendChild(div);
+    });
+    scrollBottom();
+  }
+  showScreen('chat');
+  loadRecents();
+}
+
+async function saveCurrentSession(userMsg, amoMsg) {
+  if (!currentSessionId) {
+    // Auto-skapa session
+    const title = userMsg.replace(/[\n\r]+/g,' ').slice(0,50);
+    const r = await fetch('/cfo/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title})});
+    const d = await r.json();
+    currentSessionId = d.session.id;
+  }
+  currentMessages.push({role:'user',content:userMsg},{role:'amos',content:amoMsg});
+  
+  // Uppdatera titel vid första meddelandet
+  if (currentMessages.length === 2) {
+    await fetch('/cfo/sessions/' + currentSessionId, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title: userMsg.slice(0,50), messages: currentMessages})
+    });
+  } else {
+    await fetch('/cfo/sessions/' + currentSessionId, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages: currentMessages})
+    });
+  }
+  loadRecents();
+}
+
+const BOLAG_DATA = [
+  { id:'landvex-ab', flag:'🇸🇪', name:'LandveX AB', sub:'559141-7042 · Sverige · SEK', status:'active' },
+  { id:'quixzoom-inc', flag:'🇺🇸', name:'QuiXzoom Inc', sub:'Delaware · Stripe Atlas · USD', status:'warn' },
+  { id:'quixzoom-uab', flag:'🇱🇹', name:'Quixzoom UAB', sub:'Vilnius, Litauen · EUR', status:'warn' },
+  { id:'landvex-inc', flag:'🇺🇸', name:'Landvex Inc', sub:'Texas LLC · USD', status:'warn' },
+  { id:'wavult-dmcc', flag:'🇦🇪', name:'Wavult Group DMCC', sub:'Dubai · Holding · AED', status:'warn' },
+  { id:'devops-co', flag:'🇦🇪', name:'DevOps Company', sub:'DMCC Free Zone · AED', status:'warn' },
+  { id:'finance-co', flag:'🇦🇪', name:'FinanceCo', sub:'DMCC Free Zone · AED', status:'warn' },
+];
+let PENDING = false, currentModel = 'cfo', isRecording = false, recognition = null, webSearchOn = true;
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  loadLive();
+  loadRecents();
+  renderNotifs();
+});
+
+// ── Bolag list ────────────────────────────────────────────────────────────────
+function renderBolag() {
+  const el = document.getElementById('bolag-list');
+  el.innerHTML = BOLAG_DATA.map(b => `
+    <div class="list-item" onclick="askChat('Berätta om ${b.name}: bolagsstruktur, status, EIN, compliance och ekonomi')">
+      <div class="list-left">
+        <div class="list-icon">${b.flag}</div>
+        <div><div class="list-name">${b.name}</div><div class="list-sub">${b.sub}</div></div>
+      </div>
+      <div class="list-right"><div class="status-dot ${b.status === 'active' ? '' : 'warn'}"></div>›</div>
+    </div>`).join('');
+}
+
+// ── Live data ─────────────────────────────────────────────────────────────────
+async function loadLive() {
+  try {
+    const r = await fetch('/finance/live');
+    const d = await r.json();
+    if (d.sms_balance_sek !== null && d.sms_balance_sek !== undefined) {
+      const sek = d.sms_balance_sek;
+      document.getElementById('sms-val').textContent = sek.toLocaleString('sv-SE') + ' kr';
+      const b = document.getElementById('sms-badge');
+      if (sek < 1000) { b.textContent = '⚠️ Lågt'; b.className = 'kpi-badge warn'; }
+    }
+  } catch(e) {}
+  // Beräkna nedräkning
+  const launchDate = new Date('2026-06-15');
+  const daysToLaunch = Math.ceil((launchDate - new Date()) / 86400000);
+  const launchEl = document.getElementById('days-to-launch');
+  if (launchEl) launchEl.textContent = daysToLaunch + ' dagar';
+  
+  const departDate = new Date('2026-04-11');
+  const daysInThai = Math.ceil((new Date() - departDate) / 86400000);
+  const thaiEl = document.getElementById('days-in-thai');
+  if (thaiEl) thaiEl.textContent = daysInThai + ' dagar';
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar-overlay').style.display = 'block';
+  document.getElementById('sidebar').classList.add('open');
+  loadRecents();
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  setTimeout(() => document.getElementById('sidebar-overlay').style.display = 'none', 300);
+}
+
+// ── Model picker ──────────────────────────────────────────────────────────────
+function openModelPicker() {
+  document.getElementById('model-overlay').style.display = 'block';
+  const s = document.getElementById('model-sheet');
+  s.style.display = 'block';
+  requestAnimationFrame(() => s.style.transform = 'translateY(0)');
+}
+function closeModelPicker() {
+  document.getElementById('model-sheet').style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('model-overlay').style.display='none'; document.getElementById('model-sheet').style.display='none'; }, 280);
+}
+const modelNames = { cfo:'CFO-läge', operator:'Operator', audit:'Audit', dev:'Dev' };
+function setModel(m) {
+  currentModel = m;
+  document.getElementById('model-label').textContent = modelNames[m] || m;
+  ['cfo','operator','audit','dev'].forEach(k => {
+    const el = document.getElementById('check-'+k);
+    if (el) el.style.display = k === m ? 'block' : 'none';
+  });
+  closeModelPicker();
+}
+
+// ── Screen nav ────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  ['chat','kpi','konton','bolag'].forEach(k => {
+    const el = document.getElementById('sb-' + k);
+    if (el) el.classList.toggle('active', k === name);
+  });
+  const wrap = document.getElementById('input-wrap');
+  wrap.style.display = name === 'chat' ? '' : 'none';
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+function onInput(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  document.getElementById('send-btn').classList.toggle('visible', el.value.trim().length > 0);
+}
+
+function scrollBottom() {
+  const m = document.getElementById('messages');
+  setTimeout(() => { m.scrollTop = m.scrollHeight + 200; }, 50);
+}
+
+function now() { return new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}); }
+
+function renderMd(t) {
+  if (!t) return '';
+  return t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:#0001;padding:1px 5px;border-radius:3px;font-size:13px">$1</code>')
+    .replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+
+function addMsg(role, text) {
+  const empty = document.getElementById('chat-empty');
+  const msgs = document.getElementById('messages');
+  if (empty) { empty.style.display='none'; msgs.style.display='flex'; }
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const msgId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+  if (role === 'amos') {
+    div.innerHTML = `
+      <div class="bubble">${renderMd(text)}</div>
+      <div class="msg-actions">
+        <button class="msg-act" title="Kopiera" onclick="copyMsg('${msgId}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="msg-act" title="Lyssna" onclick="speakMsg('${msgId}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </button>
+        <button class="msg-act" id="${msgId}-pos" title="Bra svar" onclick="rateMsg('${msgId}',1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+        </button>
+        <button class="msg-act" id="${msgId}-neg" title="Dåligt svar" onclick="rateMsg('${msgId}',-1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z"/><path d="M17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+        </button>
+        <button class="msg-act" title="Dela" onclick="shareMsg('${msgId}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </button>
+        <button class="msg-act" title="Mer" id="${msgId}-more" onclick="moreMsg('${msgId}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+        </button>
+      </div>
+      <div class="msg-time">AMOS PRO</div>`;
+    div.dataset.msgId = msgId;
+  } else {
+    div.innerHTML = `<div class="bubble">${text.replace(/</g,'&lt;')}</div><div class="msg-time">Du · ${now()}</div>`;
+  }
+  msgs.appendChild(div);
+  scrollBottom();
+  return div;
+}
+
+const msgTexts = {};
+
+function copyMsg(id) {
+  const el = document.querySelector(`[data-msg-id="${id}"] .bubble`);
+  const text = el?.innerText || '';
+  navigator.clipboard?.writeText(text).then(() => showToast('📋 Kopierat'));
+}
+
+function speakMsg(id) {
+  const el = document.querySelector(`[data-msg-id="${id}"] .bubble`);
+  const text = el?.innerText || '';
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'sv-SE';
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
+  showToast('🔊 Läser upp...');
+}
+
+function rateMsg(id, score) {
+  const pos = document.getElementById(id + '-pos');
+  const neg = document.getElementById(id + '-neg');
+  if (pos) pos.classList.toggle('active-pos', score > 0);
+  if (neg) neg.classList.toggle('active-neg', score < 0);
+  fetch('/api/feedback', { method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body: JSON.stringify({messageId:id, score}) }).catch(()=>{});
+  showToast(score > 0 ? '👍 Tack!' : '👎 Noterat — förbättras');
+}
+
+function shareMsg(id) {
+  const el = document.querySelector(`[data-msg-id="${id}"] .bubble`);
+  const text = el?.innerText || '';
+  if (navigator.share) { navigator.share({ text, title: 'AMOS PRO' }); }
+  else { navigator.clipboard?.writeText(text).then(() => showToast('📤 Kopierat för delning')); }
+}
+
+
+
+
+function addThinking() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg amos';
+  div.innerHTML = `<div class="bubble">
+    <div class="amos-thinking">
+      <video src="/amos-typing.webm" autoplay loop muted playsinline></video>
+      <div class="amos-thinking-text">AMOS skriver...</div>
+    </div>
+  </div>`;
+  msgs.appendChild(div); scrollBottom();
+  return div;
+}
+
+async function askChat(q) {
+  showScreen('chat');
+  document.getElementById('input').value = q;
+  await send();
+}
+
+async function send() {
+  const inp = document.getElementById('input');
+  const text = inp.value.trim();
+  if (!text || PENDING) return;
+  inp.value = ''; inp.style.height = '';
+  document.getElementById('send-btn').classList.remove('visible');
+
+  addMsg('user', text);
+  PENDING = true;
+  const think = addThinking();
+
+  try {
+    const r = await fetch(CHAT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, mode: currentModel.toUpperCase() })
+    });
+    think.remove();
+    if (!r.ok) { addMsg('amos', '⚠️ ' + r.status); PENDING=false; return; }
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf='', full='';
+    const el = addMsg('amos','');
+    const bub = el.querySelector('.bubble');
+    while(true) {
+      const {done,value}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      const lines=buf.split('\n'); buf=lines.pop();
+      for(const line of lines) {
+        if(!line.startsWith('data: ')) continue;
+        try { const d=JSON.parse(line.slice(6)); if(d.delta||d.text){full+=(d.delta||d.text);bub.innerHTML=renderMd(full);scrollBottom();} } catch{}
+      }
+    }
+    if(!bub.innerHTML) bub.textContent='Inget svar.';
+    el.querySelector('.msg-time').textContent='AMOS PRO · '+now();
+    saveCurrentSession(text, full).catch(()=>{});
+  } catch(e) { think?.remove(); addMsg('amos','⚠️ '+e.message); }
+  PENDING=false;
+}
+
+// ── Voice ─────────────────────────────────────────────────────────────────────
+function toggleSpeech() {
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) { alert('Tal-till-text stöds ej i denna webbläsare'); return; }
+  if(isRecording) {
+    recognition?.stop(); isRecording=false;
+    document.getElementById('voice-btn').classList.remove('recording');
+    document.getElementById('input').placeholder='Skriv en finansfråga...';
+    return;
+  }
+  recognition=new SR();
+  recognition.lang='sv-SE'; recognition.continuous=true; recognition.interimResults=true;
+  recognition.onstart=()=>{ isRecording=true; document.getElementById('voice-btn').classList.add('recording'); document.getElementById('input').placeholder='🎤 Spelar in...'; };
+  recognition.onresult=e=>{ let f='',i=''; for(let r of e.results){if(r.isFinal)f+=r[0].transcript; else i+=r[0].transcript;} const inp=document.getElementById('input'); inp.value=f+i; onInput(inp); };
+  recognition.onend=()=>{ if(isRecording) recognition.start(); };
+  recognition.onerror=e=>{ if(e.error==='no-speech') return; isRecording=false; document.getElementById('voice-btn').classList.remove('recording'); };
+  recognition.start();
+}
+
+// ── Attach ────────────────────────────────────────────────────────────────────
+function openAttach() {
+  document.getElementById('attach-overlay').style.display='block';
+  const s=document.getElementById('attach-sheet'); s.style.display='block';
+  requestAnimationFrame(()=>s.style.transform='translateY(0)');
+}
+function closeAttach(e) {
+  if(e&&e.target!==document.getElementById('attach-overlay')) return;
+  document.getElementById('attach-sheet').style.transform='translateY(100%)';
+  setTimeout(()=>{ document.getElementById('attach-overlay').style.display='none'; document.getElementById('attach-sheet').style.display='none'; },280);
+}
+function attachCamera(){closeAttach();document.getElementById('camera-input').click();}
+function attachPhoto(){closeAttach();document.getElementById('photo-input').click();}
+function attachFile(){closeAttach();document.getElementById('file-input').click();}
+
+function confirmLogout() {
+  if (confirm('Logga ut från AMOS PRO?')) {
+    document.cookie = 'wavult_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    localStorage.removeItem('amos_jwt_token');
+    showToast('👋 Utloggad');
+    setTimeout(() => { window.location.href = '/'; }, 1000);
+  }
+}
+
+function showToast(msg, duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function toggleWebSearch() {
+  webSearchOn = !webSearchOn;
+  document.getElementById('websearch-toggle').classList.toggle('on', webSearchOn);
+  if (webSearchOn) {
+    showToast('🌐 Realtidssökning PÅ — AMOS söker på webben för aktuella nyheter, kurser och fakta via Perplexity Sonar Pro');
+  } else {
+    showToast('🔒 Realtidssökning AV — AMOS svarar enbart från sin kunskapsbas utan externa källor');
+  }
+}
+
+async function handleAnyFile(input) {
+  const files=Array.from(input.files); if(!files.length) return;
+  for(const file of files){
+    const mb=(file.size/1024/1024).toFixed(1);
+    const el=addMsg('amos',`📎 Laddar upp <strong>${file.name}</strong> (${mb} MB)...`);
+    const bub=el.querySelector('.bubble');
+    try {
+      const fd=new FormData(); fd.append('file',file);
+      const r=await fetch('/cfo/upload',{method:'POST',body:fd});
+      const d=await r.json();
+      if(d.ok&&d.files?.length){
+        const f=d.files[0];
+        bub.innerHTML=`✅ <strong>${f.name}</strong> uppladdad (${f.size_mb} MB)<br><a href="${f.url}" target="_blank" style="color:var(--accent)">Öppna ›</a>`;
+        document.getElementById('input').value=`Filen "${f.name}" är uppladdad. Analysera den.`;
+        onInput(document.getElementById('input'));
+      } else bub.innerHTML='⚠️ Uppladdning misslyckades';
+    } catch(e){bub.innerHTML='⚠️ '+e.message;}
+  }
+  input.value='';
+}
+
+// ── Expense ───────────────────────────────────────────────────────────────────
+
+
+// ── Notifikationer ────────────────────────────────────────────────────────────
+const NOTIFICATIONS = [
+  { id:1, icon:'🏦', title:'Nordea API väntar', body:'Koppla Nordea Open Banking för live-saldon', time:'Nu', unread:true },
+  { id:2, icon:'💰', title:'46elks saldo lågt', body:'Saldo: 2 665 kr — överväg påfyllning', time:'Idag', unread:true },
+  { id:3, icon:'🏢', title:'QuiXzoom Inc — EIN', body:'EIN-ansökan för Delaware-bolaget inväntas', time:'27 apr', unread:false },
+  { id:4, icon:'🇦🇪', title:'Wavult DMCC', body:'Formation påbörjad 2026-04-01, status okänd', time:'26 apr', unread:false },
+];
+
+function renderNotifs() {
+  const unread = NOTIFICATIONS.filter(n => n.unread).length;
+  document.getElementById('notif-badge').style.display = unread > 0 ? 'block' : 'none';
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+  list.innerHTML = NOTIFICATIONS.length ? NOTIFICATIONS.map(n => `
+    <div onclick="notifTap(${n.id})" style="display:flex;align-items:flex-start;gap:14px;padding:14px 20px;cursor:pointer;background:${n.unread ? 'var(--surface)' : 'transparent'};border-bottom:1px solid var(--border)40">
+      <div style="font-size:24px;width:36px;text-align:center;flex-shrink:0">${n.icon}</div>
+      <div style="flex:1">
+        <div style="font-weight:${n.unread ? '700' : '500'};font-size:15px">${n.title}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:2px;line-height:1.4">${n.body}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${n.time}</div>
+      </div>
+      ${n.unread ? '<div style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:6px"></div>' : ''}
+    </div>`).join('') : '<div style="padding:40px;text-align:center;color:var(--text2)">Inga notifikationer</div>';
+}
+
+function notifTap(id) {
+  const n = NOTIFICATIONS.find(x => x.id === id);
+  if (n) { n.unread = false; renderNotifs(); }
+  closeNotifications();
+  askChat(n?.body || '');
+}
+
+function markAllRead() {
+  NOTIFICATIONS.forEach(n => n.unread = false);
+  renderNotifs();
+}
+
+function openNotifications() {
+  renderNotifs();
+  const overlay = document.getElementById('notif-overlay');
+  const sheet = document.getElementById('notif-sheet');
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+  NOTIFICATIONS.forEach(n => { setTimeout(() => { n.unread = false; renderNotifs(); }, 2000); });
+}
+
+function closeNotifications(e) {
+  if (e && e.target !== document.getElementById('notif-overlay')) return;
+  document.getElementById('notif-sheet').style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('notif-overlay').style.display = 'none'; }, 280);
+}
+
+
+async function checkAllAPIs() {
+  const rows = document.querySelectorAll('#screen-apis .api-row[data-url]');
+  for (const row of rows) {
+    const url = row.dataset.url;
+    const statusEl = row.querySelector('.api-status');
+    statusEl.textContent = '⋯';
+    statusEl.className = 'api-status checking';
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const r = await fetch('/cfo/proxy-check?url=' + encodeURIComponent(url), {signal: controller.signal}).catch(() => null);
+      clearTimeout(timeout);
+      if (r && r.ok) {
+        const d = await r.json().catch(() => ({}));
+        statusEl.textContent = d.ok ? '✅ Online' : (d.status === 200 ? '✅ Online' : '⚠️ ' + d.status);
+        statusEl.className = 'api-status ' + (d.status < 400 ? 'ok' : 'error');
+      } else {
+        statusEl.textContent = '❌ Offline';
+        statusEl.className = 'api-status error';
+      }
+    } catch(e) {
+      statusEl.textContent = '❌ Offline';
+      statusEl.className = 'api-status error';
+    }
+  }
+}
+
+
+// ── API Detail ────────────────────────────────────────────────────────────────
+let currentApiName = '';
+let currentApiKey = '';
+
+const API_DETAILS = {
+  'OpenAI': { key: 'sk-proj-khVV...SREA', billing: 'Kreditkort · Pay-as-you-go', fallback: 'Anthropic Claude', balance: 'Variabel/månad' },
+  'Anthropic Claude': { key: 'sk-ant-api03...', billing: 'Kreditkort · Pay-as-you-go', fallback: 'OpenAI GPT', balance: 'Variabel/månad' },
+  'Google Gemini': { key: 'AIza...', billing: 'Google Cloud · Invoice', fallback: 'Anthropic', balance: 'GCP-kredit' },
+  'xAI Grok': { key: 'xai-...', billing: 'Kreditkort', fallback: 'DeepSeek', balance: 'Variabel' },
+  'Perplexity': { key: 'pplx-d0FH...cOR', billing: 'Kreditkort · Per sökning', fallback: 'Google Gemini', balance: 'Variabel' },
+  'ElevenLabs': { key: 'el_...', billing: 'Kreditkort · Creator plan', fallback: 'OpenAI TTS', balance: '~500 kr/mån' },
+  '46elks': { key: '$FORTYSIX_ELKS_USERNAME', billing: 'Prepaid · Autofyll vid < 500 kr', fallback: 'Twilio', balance: '2 665 kr kvar' },
+  'Cloudflare API': { key: 'CF_GLOBAL_KEY...', billing: 'Free + Workers paid', fallback: '—', balance: 'Pro plan' },
+  'UAPIX Vision': { key: 'uapix_vision_...', billing: 'UAPIX · Per image', fallback: 'Google Vision', balance: 'Pay-per-use' },
+};
+
+
+async function sendToJohan(task) {
+  const msg = `Johan — uppgift från Winston (CFO) via AMOS PRO:\n\n${task}\n\nBehöver konfigureras och bekräftas till Winston när klart.`;
+  try {
+    await fetch('/cfo/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ message: `SMS till Johan Berglund (+46736977576): ${msg}` })
+    });
+    showToast('📤 Skickat till Johan Berglund');
+  } catch(e) { showToast('⚠️ Kunde inte skicka'); }
+}
+
+function openApiDetail(name, url, statusText, isOk) {
+  currentApiName = name;
+  document.getElementById('api-detail-name').textContent = name;
+  document.getElementById('api-detail-url').textContent = url || '';
+  
+  const dot = document.getElementById('api-detail-status-dot');
+  const txt = document.getElementById('api-detail-status-text');
+  dot.style.background = isOk ? 'var(--green)' : 'var(--yellow)';
+  txt.textContent = statusText || (isOk ? '✅ Online' : '⚠️ Kontrollera');
+
+  const details = API_DETAILS[name] || {};
+  currentApiKey = details.key || '••• Ej konfigurerad';
+  document.getElementById('api-key-display').textContent = '••••••••••••••••••••••••••••';
+  document.getElementById('api-payment-method').textContent = details.billing || '—';
+  document.getElementById('api-billing-model').textContent = details.billing?.split('·')[0]?.trim() || '—';
+  document.getElementById('api-balance').textContent = details.balance || '—';
+  document.getElementById('api-next-invoice').textContent = '1:a nästa månad';
+  document.getElementById('api-primary').textContent = name;
+  document.getElementById('api-fallback1').textContent = details.fallback || '—';
+
+  const overlay = document.getElementById('api-detail-overlay');
+  const sheet = document.getElementById('api-detail-sheet');
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+}
+
+function closeApiDetail(e) {
+  if (e && e.target !== document.getElementById('api-detail-overlay')) return;
+  document.getElementById('api-detail-sheet').style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('api-detail-overlay').style.display = 'none'; }, 300);
+}
+
+let keyRevealed = false;
+function revealKey() {
+  keyRevealed = !keyRevealed;
+  const el = document.getElementById('api-key-display');
+  const btn = document.querySelector('.key-reveal');
+  el.textContent = keyRevealed ? currentApiKey : '••••••••••••••••••••••••••••';
+  btn.textContent = keyRevealed ? 'Dölj' : 'Visa';
+}
+
+function copyKey() {
+  navigator.clipboard?.writeText(currentApiKey).then(() => showToast('📋 Kopierat till urklipp'));
+}
+
+
+let _moreMsgId = null;
+let _lastUserMsg = '';
+
+function moreMsg(id) {
+  _moreMsgId = id;
+  const btn = document.getElementById(id + '-more') || document.querySelector(`[data-msg-id="${id}"] .msg-act:last-child`);
+  const menu = document.getElementById('more-msg-menu');
+  const overlay = document.getElementById('more-msg-overlay');
+  
+  // Sätt tid och modell
+  document.getElementById('more-msg-time').textContent = 'I dag, ' + now();
+  document.getElementById('more-msg-model').textContent = 'Använde ' + (currentModel === 'cfo' ? 'CFO-läge' : currentModel);
+  
+  // Positionera menyn nära knappen
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    const menuEl = menu;
+    menuEl.style.top = Math.min(rect.bottom + 8, window.innerHeight - 280) + 'px';
+    menuEl.style.left = Math.min(rect.left, window.innerWidth - 260) + 'px';
+  }
+  
+  overlay.style.display = 'block';
+  requestAnimationFrame(() => { menu.style.transform = 'scale(1)'; menu.style.opacity = '1'; });
+}
+
+function closeMoreMsg(e) {
+  const menu = document.getElementById('more-msg-menu');
+  menu.style.transform = 'scale(0.9)';
+  menu.style.opacity = '0';
+  setTimeout(() => { document.getElementById('more-msg-overlay').style.display = 'none'; }, 150);
+}
+
+function branchChat() {
+  const el = _moreMsgId ? document.querySelector(`[data-msg-id="${_moreMsgId}"] .bubble`) : null;
+  const text = el?.innerText || '';
+  newChat().then(() => {
+    document.getElementById('input').value = 'Fortsätt från: ' + text.slice(0, 100) + '...';
+  });
+}
+
+function retryMsg() {
+  const lastUser = [...document.querySelectorAll('.msg.user .bubble')].pop()?.innerText || '';
+  if (lastUser) {
+    document.getElementById('input').value = lastUser;
+    send();
+  }
+}
+
+function searchWeb() {
+  const el = _moreMsgId ? document.querySelector(`[data-msg-id="${_moreMsgId}"] .bubble`) : null;
+  const text = el?.innerText?.slice(0, 80) || 'Wavult Group';
+  window.open('https://www.google.com/search?q=' + encodeURIComponent(text), '_blank');
+}
+
+function openProfile() {
+  closeSidebar();
+  const overlay = document.getElementById('profile-overlay');
+  const sheet = document.getElementById('profile-sheet');
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  requestAnimationFrame(() => sheet.style.transform = 'translateY(0)');
+}
+function closeProfile(e) {
+  if (e && e.target !== document.getElementById('profile-overlay')) return;
+  const sheet = document.getElementById('profile-sheet');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => { document.getElementById('profile-overlay').style.display = 'none'; }, 300);
+}
+
+function openExpenseForm(){
+  closeAttach();
+  document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('expense-overlay').style.display='block';
+  const s=document.getElementById('expense-sheet'); s.style.display='block';
+  requestAnimationFrame(()=>s.style.transform='translateY(0)');
+}
+function closeExpense(e){
+  if(e&&e.target!==document.getElementById('expense-overlay')) return;
+  document.getElementById('expense-sheet').style.transform='translateY(100%)';
+  setTimeout(()=>{ document.getElementById('expense-overlay').style.display='none'; },300);
+}
+function selectChip(el,group){
+  el.closest('#exp-'+group).querySelectorAll('.exp-chip').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function handleExpFile(input){if(input.files[0])document.getElementById('exp-file-label').innerHTML='✅ '+input.files[0].name;}
+async function submitExpense(){
+  const cat=document.querySelector('#exp-category .exp-chip.selected')?.textContent?.trim()||'Övrigt';
+  const amount=document.getElementById('exp-amount').value;
+  const currency=document.getElementById('exp-currency').value;
+  const entity=document.querySelector('#exp-entity .exp-chip.selected')?.textContent?.trim()||'LandveX AB';
+  const desc=document.getElementById('exp-desc').value;
+  const date=document.getElementById('exp-date').value;
+  if(!amount){alert('Ange belopp');return;}
+  closeExpense();
+  const msg=`Registrera kostnad: ${cat} — ${amount} ${currency} — ${entity} — ${desc||'ingen beskrivning'} — Datum: ${date}`;
+  await askChat(msg);
+}
+</script>
+<div id="toast" class="toast"></div>
+
+<!-- PROFIL MODAL -->
+<div id="profile-overlay" onclick="closeProfile(event)" style="display:none;position:fixed;inset:0;background:#0006;z-index:600">
+<div id="profile-sheet" class="sheet-base" style="z-index:601">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeProfile()">✕</button>
+    <span class="sheet-title">Profil</span>
+    <div style="width:34px"></div>
+  </div>
+
+  <!-- Avatar + namn -->
+  <div style="display:flex;flex-direction:column;align-items:center;padding:24px 20px 20px">
+    <div style="width:80px;height:80px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:28px;margin-bottom:14px">WB</div>
+    <div style="font-size:22px;font-weight:700">Winston Bjarnemark</div>
+    <div style="font-size:14px;color:var(--text2);margin-top:4px">CFO · Wavult Group</div>
+  </div>
+
+  <!-- Kontaktinfo -->
+  <div style="margin:0 20px 8px;background:var(--surface);border-radius:14px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">📧</span>
+      <div>
+        <div style="font-size:12px;color:var(--text2)">E-post</div>
+        <div style="font-size:15px;font-weight:500">winston@hypbit.com</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)">
+      <span style="font-size:18px">📱</span>
+      <div>
+        <div style="font-size:12px;color:var(--text2)">Telefon</div>
+        <div style="font-size:15px;font-weight:500">+46 76 812 3548</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 16px">
+      <span style="font-size:18px">🏢</span>
+      <div>
+        <div style="font-size:12px;color:var(--text2)">Bolag (primärt)</div>
+        <div style="font-size:15px;font-weight:500">LandveX AB · 559141-7042</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inställningar -->
+  <div style="margin:8px 20px;background:var(--surface);border-radius:14px;overflow:hidden">
+    <div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px">Inställningar</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px"><span>🌍</span><span style="font-size:15px">Språk</span></div>
+      <span style="color:var(--text2);font-size:14px">Svenska ›</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px"><span>💱</span><span style="font-size:15px">Primär valuta</span></div>
+      <span style="color:var(--text2);font-size:14px">SEK ›</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+      <div style="display:flex;align-items:center;gap:12px"><span>🔔</span><span style="font-size:15px">Notifikationer</span></div>
+      <button class="attach-toggle on" style="flex-shrink:0"></button>
+    </div>
+  </div>
+
+  <!-- AMOS PRO info -->
+  <div style="margin:8px 20px;background:var(--surface);border-radius:14px;padding:14px 16px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <svg width="28" height="28" viewBox="0 0 72 72" fill="none"><rect width="72" height="72" rx="14" fill="#1A1814"/><path d="M36 16L54 52H18L36 16Z" fill="none" stroke="#C96A3A" stroke-width="4" stroke-linejoin="round"/><line x1="24" y1="40" x2="48" y2="40" stroke="#C96A3A" stroke-width="4" stroke-linecap="round"/></svg>
+      <div><div style="font-weight:700;font-size:15px">AMOS PRO</div><div style="font-size:12px;color:var(--text2)">Wavult Intelligence Platform</div></div>
+    </div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5">
+      Modell: Qwen3-235B (CFO-läge)<br>
+      Server: amos.wavult.com<br>
+      Version: 2026-04-27
+    </div>
+  </div>
+
+  <!-- Logga ut -->
+  <div style="padding:16px 20px 4px">
+    <button onclick="confirmLogout()" style="width:100%;background:none;border:1px solid #ef444440;border-radius:14px;padding:15px;color:#ef4444;font-size:16px;font-weight:600;cursor:pointer">
+      Logga ut
+    </button>
+  </div>
+
+</div>
+</div>
+
+
+<!-- NOTIFIKATIONER -->
+<div id="notif-overlay" onclick="closeNotifications(event)" style="display:none;position:fixed;inset:0;background:#0005;z-index:600">
+<div id="notif-sheet" class="sheet-base" style="z-index:601">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeNotifications()">✕</button>
+    <span class="sheet-title">Notifikationer</span>
+    <button onclick="markAllRead()" style="background:none;border:none;color:var(--accent);font-size:14px;cursor:pointer">Rensa alla</button>
+  </div>
+  <div id="notif-list" style="padding:8px 0">
+    <!-- Fylls dynamiskt -->
+  </div>
+</div>
+</div>
+
+
+<!-- API DETAIL SHEET -->
+<div id="api-detail-overlay" onclick="closeApiDetail(event)" style="display:none;position:fixed;inset:0;background:#0006;z-index:600">
+<div id="api-detail-sheet" class="sheet-base" style="z-index:601">
+  <div class="sheet-handle">
+    <button class="sheet-close" onclick="closeApiDetail()">✕</button>
+    <span id="api-detail-name" class="sheet-title">API Detaljer</span>
+    <div style="width:34px"></div>
+  </div>
+  <div style="padding:0 20px 20px">
+
+    <!-- Status -->
+    <div style="display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--border)">
+      <div id="api-detail-status-dot" style="width:10px;height:10px;border-radius:50%;background:var(--text2)"></div>
+      <div>
+        <div id="api-detail-status-text" style="font-weight:600;font-size:15px">Kontrollerar...</div>
+        <div id="api-detail-url" style="font-size:12px;color:var(--text2);margin-top:2px"></div>
+      </div>
+    </div>
+
+    <!-- API Nyckel -->
+    <div style="margin-top:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:4px">🔑 API-nyckel</div>
+      <div class="key-box">
+        <div class="key-val" id="api-key-display">••••••••••••••••••••••••••••</div>
+        <button class="key-reveal" onclick="revealKey()">Visa</button>
+        <button class="key-copy" onclick="copyKey()">📋</button>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-top:4px">🔒 Lagrad krypterat i AWS SSM</div>
+    </div>
+
+    <!-- Kortuppgifter -->
+    <div style="margin-top:16px;background:var(--surface);border-radius:12px;padding:14px" id="api-billing-section">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px">💳 Kortuppgifter & Fakturering</div>
+      <div class="detail-row"><span style="color:var(--text2)">Betalningsmetod</span><span id="api-payment-method">—</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Faktureringsmodell</span><span id="api-billing-model">—</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Saldo / Limit</span><span id="api-balance">—</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Nästa faktura</span><span id="api-next-invoice">—</span></div>
+    </div>
+
+    <!-- Fallback -->
+    <div style="margin-top:12px;background:var(--surface);border-radius:12px;padding:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:10px">🔄 Fallback-konfiguration</div>
+      <div class="detail-row"><span style="color:var(--text2)">Primär</span><span id="api-primary" style="font-weight:600;color:var(--green)">Aktiv</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Fallback 1</span><span id="api-fallback1">—</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Strategi</span><span id="api-fallback-strategy">Sekventiell</span></div>
+      <div class="detail-row"><span style="color:var(--text2)">Auto-switch vid fel</span><span style="color:var(--green)">✅ Ja</span></div>
+    </div>
+
+    <!-- Winston: Ekonomi -->
+    <div style="margin-top:12px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px">💰 Winston — Ekonomisk hantering</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="askChat('Visa detaljerad kostnad och budget för API ' + currentApiName + ' — SEK per månad, trend och prognos');closeApiDetail();showScreen('chat')"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);font-size:14px;cursor:pointer;font-weight:500;text-align:left">
+          📊 Kostnad & budget
+        </button>
+        <button onclick="askChat('Analysera om vi betalar rätt pris för ' + currentApiName + ' — finns billigare alternativ?');closeApiDetail();showScreen('chat')"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);font-size:14px;cursor:pointer;font-weight:500;text-align:left">
+          💸 Prisanalys & alternativ
+        </button>
+        <button onclick="askChat('Sätt kostnadstak och varningsregler för ' + currentApiName);closeApiDetail();showScreen('chat')"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);font-size:14px;cursor:pointer;font-weight:500;text-align:left">
+          🚨 Sätt kostnadstak
+        </button>
+      </div>
+    </div>
+
+    <!-- Johan: Teknik -->
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px">⚙️ Johan — Tekniskt ansvar</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="sendToJohan('Konfigurera och aktivera API: ' + currentApiName);closeApiDetail()"
+          style="background:var(--dark);border:none;border-radius:12px;padding:13px;color:#fff;font-size:14px;cursor:pointer;font-weight:600;text-align:left">
+          📤 Skicka konfiguration till Johan
+        </button>
+        <button onclick="askChat('Teknisk setup, fallback och rotation av ' + currentApiName + ' — steg för steg för Johan');closeApiDetail();showScreen('chat')"
+          style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);font-size:14px;cursor:pointer;font-weight:500;text-align:left">
+          🔄 Generera setup-instruktion
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<!-- MER-MENY (per meddelande) -->
+<div id="more-msg-overlay" onclick="closeMoreMsg(event)" style="display:none;position:fixed;inset:0;z-index:700">
+<div id="more-msg-menu" style="position:fixed;background:var(--panel);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.15);min-width:240px;overflow:hidden;transform:scale(0.9);opacity:0;transition:all .15s;pointer-events:auto">
+  <div id="more-msg-time" style="font-size:12px;color:var(--text2);padding:12px 18px 6px;border-bottom:1px solid var(--border)"></div>
+  <button onclick="branchChat();closeMoreMsg()" style="display:flex;align-items:center;gap:14px;width:100%;padding:14px 18px;background:none;border:none;color:var(--text);font-size:16px;cursor:pointer;text-align:left">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
+    Förgrena till ny chatt
+  </button>
+  <div style="border-top:1px solid var(--border)">
+    <div id="more-msg-model" style="font-size:12px;color:var(--text2);padding:10px 18px 4px">Använde CFO-läge</div>
+    <button onclick="retryMsg();closeMoreMsg()" style="display:flex;align-items:center;gap:14px;width:100%;padding:10px 18px;background:none;border:none;color:var(--text);font-size:16px;cursor:pointer;text-align:left">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.7"/></svg>
+      Försök igen
+    </button>
+    <button onclick="searchWeb();closeMoreMsg()" style="display:flex;align-items:center;gap:14px;width:100%;padding:10px 18px 14px;background:none;border:none;color:var(--text);font-size:16px;cursor:pointer;text-align:left">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Sök på webben
+    </button>
+  </div>
+</div>
+</div>
+
+
+<style>
+#pv{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.88);animation:pvIn .2s ease}
+#pv.on{display:flex;flex-direction:column}
+@keyframes pvIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+#pv-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#111;color:#fff;gap:12px;flex-shrink:0}
+#pv-name{font-size:14px;font-weight:500;opacity:.9;flex:1}
+#pv-close{background:#333;border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+#pv-close:hover{background:#555}
+#pv-dl{background:none;border:1px solid #555;color:#ccc;padding:5px 14px;border-radius:20px;text-decoration:none;font-size:12px}
+#pv-body{flex:1;display:flex}#pv-frame{flex:1;border:none}
+</style>
+<div id="pv" onclick="if(event.target===this)closeV()">
+  <div id="pv-bar"><button id="pv-close" onclick="closeV()">✕</button><span id="pv-name"></span><a id="pv-dl" href="#" download>⬇ Ladda ner</a></div>
+  <div id="pv-body"><iframe id="pv-frame" src=""></iframe></div>
+</div>
+<script>
+function openViewer(u,t){document.getElementById('pv-frame').src=u;document.getElementById('pv-name').textContent=t;document.getElementById('pv-dl').href=u;document.getElementById('pv').classList.add('on');document.body.style.overflow='hidden';}
+function closeV(){document.getElementById('pv').classList.remove('on');setTimeout(()=>document.getElementById('pv-frame').src='',200);document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeV()});
+</script>
+<div class="screen" id="screen-inkomster">
+  <div style="background:var(--dark);padding:16px 20px;flex-shrink:0">
+    <div style="font-size:10px;font-weight:700;color:#ffffff50;letter-spacing:.08em;margin-bottom:10px">LIVE SALDO — ALLT I SEK</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <div style="font-size:10px;color:#ffffff60;font-weight:700;margin-bottom:4px">NORDEA</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;line-height:1"><span id="nor-sek">304,177</span><span style="font-size:12px;opacity:.6;margin-left:4px">SEK</span></div>
+        <div style="font-size:11px;color:#ffffff40;margin-top:2px">3 konton</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:#ffffff60;font-weight:700;margin-bottom:4px">REVOLUT</div>
+        <div style="font-size:22px;font-weight:700;color:#fff;line-height:1"><span id="rev-sek">106,452</span><span style="font-size:12px;opacity:.6;margin-left:4px">SEK</span></div>
+        <div style="font-size:11px;color:#ffffff40;margin-top:2px">EUR+USD+SEK</div>
+      </div>
+    </div>
+    <div style="font-size:10px;color:#ffffff30;margin-top:8px">Live · var 2 min · <span id="live-ts">nu</span></div>
+  </div>
+  <div class="screen-inner" style="padding-top:0">
+    <div style="padding:18px 16px 4px;font-size:14px;font-weight:700;color:var(--text)">Inkommande – TryggBil</div>
+    <div style="padding:2px 16px 14px;font-size:12px;color:var(--text2)">Trygg Bil Stockholm AB · Plusgiro 87 53 07-1 · Tryck på fakturanr för PDF</div>
+    <div style="margin:0 16px 14px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:11px;line-height:1.7;color:var(--text2)">
+      <b style="color:var(--text)">⚖️ Villkor:</b> Dröjsmålsränta <b>0,04%/dag</b> · Påminnelse <b>60 SEK</b> · B2B <b>450 SEK</b> · Inkasso vid utebliven betalning
+    </div>
+    <div style="margin:0 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:var(--surface);font-size:11px;font-weight:700;color:var(--text2);border-bottom:2px solid var(--border)">
+          <th style="padding:10px 16px;text-align:left">FÖRFALL</th><th style="padding:10px 16px;text-align:left">FAKTURANR</th>
+          <th style="padding:10px 16px;text-align:left">BESKRIVNING</th><th style="padding:10px 16px;text-align:right">BELOPP</th>
+          <th style="padding:10px 16px;text-align:center">STATUS</th>
+        </tr></thead>
+        <tbody><tr style="background:#22c55e12;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:#22c55e">2026-04-03 — ✅ Betalt 2026-04-07</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:#22c55e">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-04-03</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/4Bhz1WSNDdBbrZ95JpGSaPgu.pdf','Faktura #10002')" style="color:#22c55e;font-weight:700;cursor:pointer;border-bottom:2px solid #22c55e60;padding-bottom:1px;font-size:11px">#10002</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Mars 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:#22c55e;font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">✅</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-04-03</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/4Bhz1WSNDdBbrZ95JpGSaPgu.pdf','Faktura #20001')" style="color:#22c55e;font-weight:700;cursor:pointer;border-bottom:2px solid #22c55e60;padding-bottom:1px;font-size:11px">#20001</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Mars 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:#22c55e;font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">✅</td></tr>
+<tr style="background:#ef444410;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:#ef4444">2026-05-01 — ⏳ Förfaller snart</td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:#ef4444">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-05-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/ydoY0G9lu6LEfRA2xxEytipj.pdf','Faktura #10003')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10003</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra April 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:#ef4444;font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">⚠️</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-05-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/ydoY0G9lu6LEfRA2xxEytipj.pdf','Faktura #20002')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20002</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult April 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:#ef4444;font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">⚠️</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-06-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-06-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/Q0ILc4dneqn0ZJ6dpYlnKarj.pdf','Faktura #10004')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10004</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Maj 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-06-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/Q0ILc4dneqn0ZJ6dpYlnKarj.pdf','Faktura #20003')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20003</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Maj 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-07-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-07-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/bTLTKOzKWIN6w20dfLEJL4OX.pdf','Faktura #10005')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10005</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Juni 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-07-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/bTLTKOzKWIN6w20dfLEJL4OX.pdf','Faktura #20004')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20004</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Juni 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-08-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-08-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/0mdLoElrB1miZcIrXrwoBhme.pdf','Faktura #10006')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10006</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Juli 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-08-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/0mdLoElrB1miZcIrXrwoBhme.pdf','Faktura #20005')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20005</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Juli 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-09-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-09-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/_6zyvs7Bvc2CHh6hO3nCjk4Z.pdf','Faktura #10007')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10007</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Aug 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-09-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/_6zyvs7Bvc2CHh6hO3nCjk4Z.pdf','Faktura #20006')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20006</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Aug 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-10-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-10-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/RxXca1SY1Ufo-GEAWb-G_gGb.pdf','Faktura #10008')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10008</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Sep 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-10-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/RxXca1SY1Ufo-GEAWb-G_gGb.pdf','Faktura #20007')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20007</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Sep 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-11-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-11-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/XOhsY2k4ZaVwm1J1qqvkCfg5.pdf','Faktura #10009')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10009</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Okt 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-11-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/XOhsY2k4ZaVwm1J1qqvkCfg5.pdf','Faktura #20008')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20008</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Okt 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2026-12-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-12-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/trmtnC14SinARsIVE-62e71K.pdf','Faktura #10010')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10010</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Nov 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2026-12-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/trmtnC14SinARsIVE-62e71K.pdf','Faktura #20009')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20009</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Nov 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2027-01-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-01-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/MY2NomuNc9EJSoTsWzUOFD1E.pdf','Faktura #10011')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10011</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Dec 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-01-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/MY2NomuNc9EJSoTsWzUOFD1E.pdf','Faktura #20010')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20010</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Dec 2026</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2027-02-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-02-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/l79vG12fMqpWzc-hlMfw1unD.pdf','Faktura #10012')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10012</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Jan 2027</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-02-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/KAGJxzWbemI0v86_DrMBIA_O.pdf','Faktura #20011')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20011</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Jan 2027</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:transparent;border-top:1px solid var(--border)"><td colspan="4" style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text2)60">2027-03-01 — </td><td style="padding:8px 16px;text-align:right;font-size:11px;font-weight:700;color:var(--text2)60">222 916,25</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-03-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/zHuaBSueT0wpSd-HooqAttJI.pdf','Faktura #10013')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#10013</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Hyra Feb 2027</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">66 666,25</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'" style="border-bottom:1px solid var(--border)15;transition:background .15s"><td style="padding:7px 16px 7px 28px;color:var(--text2);font-size:12px">2027-03-01</td><td style="padding:7px 16px;font-size:12px"><span onclick="openViewer('https://amos.wavult.com/cfo/files/Fyg46eDs9642SNzWfboinDr2.pdf','Faktura #20012')" style="color:#ef4444;font-weight:700;cursor:pointer;border-bottom:2px solid #ef444460;padding-bottom:1px;font-size:11px">#20012</span></td><td style="padding:7px 16px;font-size:12px;color:var(--text)">Konsult Feb 2027</td><td style="padding:7px 16px;text-align:right;font-weight:600;color:var(--text2);font-size:12px">156 250,00</td><td style="padding:7px 16px;text-align:center">🕐</td></tr>
+<tr style="background:var(--surface);border-top:2px solid var(--border)">
+          <td colspan="3" style="padding:12px 16px;font-weight:700;color:var(--text2)">KVAR (11 mån)</td>
+          <td style="padding:12px 16px;text-align:right;font-weight:700;color:var(--accent)">2 452 078,75</td><td></td>
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script id="live-final">
+(function(){
+  const AMOS='https://amos.wavult.com';const ES=10.8000,US=9.2100;
+  let at=null;
+  async function gat(){
+    if(at)return at;
+    try{const r=await fetch(AMOS+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;return at;}catch{return null;}
+  }
+  async function upd(){
+    try{
+      const t=await gat();if(!t)return;
+      const rr=await fetch(AMOS+'/api/banking/revolut',{headers:{'Authorization':'Bearer '+t}});
+      if(rr.ok){
+        const d=await rr.json();const accs=d.accounts||[];
+        const tot=accs.reduce((s,a)=>s+(a.currency==='SEK'?a.balance:a.currency==='EUR'?a.balance*ES:a.currency==='USD'?a.balance*US:0),0);
+        const el=document.getElementById('rev-sek');if(el&&tot>0)el.textContent=Math.round(tot).toLocaleString('sv-SE');
+      }
+      const ts=document.getElementById('live-ts');if(ts)ts.textContent=new Date().toLocaleTimeString('sv-SE');
+    }catch{at=null;}
+  }
+  setTimeout(()=>{upd();setInterval(upd,120000);},2000);
+})();
+</script>
+
+<div class="screen" id="screen-apis-status">
+  <div class="screen-inner">
+    <div class="section-title" style="padding:16px 16px 12px">API-status</div>
+    
+    <div style="margin:0 16px;display:flex;flex-direction:column;gap:10px">
+      <!-- Revolut -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#7B2FBE20;display:flex;align-items:center;justify-content:center;font-size:18px">💳</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Revolut Business</div>
+            <div style="font-size:11px;color:var(--text2)">api.wavult.com/api/revolut</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad</span>
+        </div>
+      </div>
+
+      <!-- Nordea -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#0000AA15;display:flex;align-items:center;justify-content:center;font-size:18px">🏦</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Nordea (Enable Banking)</div>
+            <div style="font-size:11px;color:var(--text2)">api.enablebanking.com · PSD2</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad</span>
+        </div>
+      </div>
+
+      <!-- Google Drive -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#4285F415;display:flex;align-items:center;justify-content:center;font-size:18px">📁</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Google Drive</div>
+            <div style="font-size:11px;color:var(--text2)">OAuth2 · LandVeX AB SIE4</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad</span>
+        </div>
+      </div>
+
+      <!-- Wavult OS -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#C96A3A15;display:flex;align-items:center;justify-content:center;font-size:18px">⚡</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Wavult OS API</div>
+            <div style="font-size:11px;color:var(--text2)">api.wavult.com · Winston CFO</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad</span>
+        </div>
+      </div>
+
+      <!-- Bernt -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#3b82f615;display:flex;align-items:center;justify-content:center;font-size:18px">🤖</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Bernt (OpenClaw)</div>
+            <div style="font-size:11px;color:var(--text2)">bernt.wavult.com · MCP</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad</span>
+        </div>
+      </div>
+
+      <!-- Gitea -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#609926 15;display:flex;align-items:center;justify-content:center;font-size:18px">🐙</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">Gitea (git.wavult.com)</div>
+            <div style="font-size:11px;color:var(--text2)">winston · finansrelaterade repos</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;cursor:pointer" onclick="window.open('https://git.wavult.com/winston','_blank')">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+          <span style="font-size:12px;color:#22c55e;font-weight:600">Kopplad ↗</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script id="konton-live">
+(function(){
+  const AMOS='https://amos.wavult.com';const ES=10.80,US=9.21;
+  let at=null;
+  async function gat(){
+    if(at)return at;
+    try{const r=await fetch(AMOS+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;return at;}catch{return null;}
+  }
+  async function upd(){
+    try{
+      const t=await gat();if(!t)return;
+      const rr=await fetch(AMOS+'/api/banking/revolut',{headers:{'Authorization':'Bearer '+t}});
+      if(rr.ok){
+        const d=await rr.json();const accs=d.accounts||[];
+        const tot=accs.reduce((s,a)=>s+(a.currency==='SEK'?a.balance:a.currency==='EUR'?a.balance*ES:a.currency==='USD'?a.balance*US:0),0);
+        // Uppdatera båda vyer
+        ['rev-sek','konton-rev-sek'].forEach(id=>{
+          const el=document.getElementById(id);
+          if(el&&tot>0)el.textContent=Math.round(tot).toLocaleString('sv-SE')+' SEK';
+        });
+      }
+      const ts=document.getElementById('live-ts');if(ts)ts.textContent=new Date().toLocaleTimeString('sv-SE');
+    }catch{at=null;}
+  }
+  setTimeout(()=>{upd();setInterval(upd,120000);},2000);
+})();
+</script>
+
+
+
+
+
+<img id="paste-preview-img" src="" alt="screenshot">
+  <div style="display:flex;gap:8px;margin-top:12px">
+    <button id="paste-send-btn" style="flex:1;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
+      Skicka till AMOS ↗
+    </button>
+    <button id="paste-cancel-btn" style="background:var(--surface);border:1px solid var(--border);padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px">
+      ✕
+    </button>
+  </div>
+</div>
+
+
+
+<div class="screen" id="screen-atgarder">
+  <div class="screen-inner">
+    <div style="padding:16px 16px 4px;font-size:14px;font-weight:700;color:var(--text)">Åtgärder</div>
+    <div style="padding:2px 16px 14px;font-size:12px;color:var(--text2)">Uppdrag, prioriteringar och deadlines</div>
+
+    <!-- Summering -->
+    <div style="margin:0 16px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="background:#ef444415;border:1px solid #ef444430;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#ef4444">1</div>
+        <div style="font-size:10px;color:#ef4444;font-weight:600">KRITISKA</div>
+      </div>
+      <div style="background:#f59e0b15;border:1px solid #f59e0b30;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#f59e0b">4</div>
+        <div style="font-size:10px;color:#f59e0b;font-weight:600">HÖG PRIO</div>
+      </div>
+      <div style="background:#3b82f615;border:1px solid #3b82f630;border-radius:10px;padding:10px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:#3b82f6">4</div>
+        <div style="font-size:10px;color:#3b82f6;font-weight:600">LÖPANDE</div>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <div style="margin:0 16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">🚫</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#ef4444;background:#ef444418;padding:2px 7px;border-radius:20px;white-space:nowrap">KRITISK</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">SEB-konto Sommarliden Holding AB</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Bankärende ej löst. Krävs för TryggBil-betalningar och skattemässig säkerhet.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#ef4444;font-weight:600">👤 Dennis</span>
+            <span style="color:var(--text2)">📅 2026-05-10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">⚠️</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#f59e0b;background:#f59e0b18;padding:2px 7px;border-radius:20px;white-space:nowrap">HÖG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">Revolut SEK-konto fylls på</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Revolut SEK har 1,42 kr. Kräver omedelbar inbetalning för operativ kontroll.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#f59e0b;font-weight:600">👤 Winston / Erik</span>
+            <span style="color:var(--text2)">📅 2026-05-02</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">⚠️</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#f59e0b;background:#f59e0b18;padding:2px 7px;border-radius:20px;white-space:nowrap">HÖG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">EIN för QuiXzoom Inc (USA)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Krävs för att slutföra juridiskt och bankmässigt setup i Delaware.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#f59e0b;font-weight:600">👤 Dennis</span>
+            <span style="color:var(--text2)">📅 2026-05-10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">⚠️</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#f59e0b;background:#f59e0b18;padding:2px 7px;border-radius:20px;white-space:nowrap">HÖG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">EIN för LandveX Inc (Texas LLC)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Krävs för försäljningsstrategi och juridisk säkerhet.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#f59e0b;font-weight:600">👤 Dennis</span>
+            <span style="color:var(--text2)">📅 2026-05-10</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">⚠️</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#f59e0b;background:#f59e0b18;padding:2px 7px;border-radius:20px;white-space:nowrap">HÖG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">n8n API-nyckel från Johan</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Johan har ännu inte levererat API-nyckel för n8n-integration. Krävs för automatisering.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#f59e0b;font-weight:600">👤 Johan</span>
+            <span style="color:var(--text2)">📅 2026-04-30</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">🔄</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#3b82f6;background:#3b82f618;padding:2px 7px;border-radius:20px;white-space:nowrap">MÅNADLIG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">TryggBil-betalning</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">222 916,25 SEK inkl. moms. Betalning till Plusgiro 87 53 07-1.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#3b82f6;font-weight:600">👤 Winston</span>
+            <span style="color:var(--text2)">📅 2026-05-01</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">🔄</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#3b82f6;background:#3b82f618;padding:2px 7px;border-radius:20px;white-space:nowrap">MÅNADLIG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">AWS-kostnader kontrolleras</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Monthly review av AWS infrastruktur och kostnader.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#3b82f6;font-weight:600">👤 Johan</span>
+            <span style="color:var(--text2)">📅 Varje månad</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">🔄</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#3b82f6;background:#3b82f618;padding:2px 7px;border-radius:20px;white-space:nowrap">MÅNADLIG</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">46elks saldo kontroll</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Kontrollera SMS-saldo (nu: 2 672 kr).</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#3b82f6;font-weight:600">👤 Winston</span>
+            <span style="color:var(--text2)">📅 Varje månad</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:1">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">🔵</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#6366f1;background:#6366f118;padding:2px 7px;border-radius:20px;white-space:nowrap">PÅGÅENDE</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">Infrastrukturövervakning</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">AMOS och OpenClaw övervakar API:er, serverstatus och kostnader.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#6366f1;font-weight:600">👤 Bernt / Rufus</span>
+            <span style="color:var(--text2)">📅 Ongoing</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border)20;opacity:0.6">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex-shrink:0;margin-top:2px">
+          <span style="font-size:16px">✅</span>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;font-weight:700;color:#22c55e;background:#22c55e18;padding:2px 7px;border-radius:20px;white-space:nowrap">SLUTFÖRT</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">Dubai bolagsformation (Wavult Group DMCC)</span>
+          </div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4">Klar 2026-04-28.</div>
+          <div style="display:flex;gap:12px;font-size:11px">
+            <span style="color:#22c55e;font-weight:600">👤 Erik / Dennis</span>
+            <span style="color:var(--text2)">📅 2026-04-28</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+<script id="sp">
+(function(){
+  const A='https://amos.wavult.com';let at=null;
+  async function gt(){if(at)return at;try{const r=await fetch(A+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;}catch{}return at;}
+  document.addEventListener('paste',async function(e){
+    const items=e.clipboardData?.items;if(!items)return;
+    for(let i=0;i<items.length;i++){
+      if(items[i].type.startsWith('image/')){
+        e.preventDefault();
+        const blob=items[i].getAsFile();if(!blob)return;
+        try{
+          const t=await gt();if(!t)return;
+          const fd=new FormData();fd.append('file',blob,'ss.png');
+          const u=await(await fetch(A+'/cfo/upload',{method:'POST',headers:{'Authorization':'Bearer '+t},body:fd})).json();
+          const imgUrl=A+(u.files?.[0]?.url||'');
+          const s=await(await fetch(A+'/cfo/sessions',{headers:{'Authorization':'Bearer '+t}})).json();
+          const sid=s.sessions?.[0]?.id;if(!sid)return;
+          const inp=document.getElementById('input');
+          const msg=(inp?.value?.trim())||'Analysera denna skärmbild.';
+          fetch(A+'/cfo/chat',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json','Accept':'text/event-stream'},
+            body:JSON.stringify({sessionId:sid,message:msg,attachments:[{url:imgUrl,type:'image'}]})
+          }).then(()=>{if(typeof loadSession==='function')setTimeout(loadSession,800);});
+          if(inp){inp.value='';inp.focus();}
+        }catch{}return;
+      }
+    }
+  });
+  gt();
+})();
+</script>
+</body>
+</html>
