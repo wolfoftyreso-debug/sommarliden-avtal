@@ -300,7 +300,16 @@ textarea#input { min-height: 48px !important; }
 }
 </style>
 
-
+<style id="active-nav">
+.sb-nav-item.active {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-radius: 8px;
+}
+.sb-nav-item {
+  transition: background 0.15s;
+}
+</style>
 </head>
 <body>
 
@@ -2089,29 +2098,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeV()});
     </div>
   </div>
 </div>
-<script id="live-final">
-(function(){
-  const AMOS='https://amos.wavult.com';const ES=10.8000,US=9.2100;
-  let at=null;
-  async function gat(){
-    if(at)return at;
-    try{const r=await fetch(AMOS+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;return at;}catch{return null;}
-  }
-  async function upd(){
-    try{
-      const t=await gat();if(!t)return;
-      const rr=await fetch(AMOS+'/api/banking/revolut',{headers:{'Authorization':'Bearer '+t}});
-      if(rr.ok){
-        const d=await rr.json();const accs=d.accounts||[];
-        const tot=accs.reduce((s,a)=>s+(a.currency==='SEK'?a.balance:a.currency==='EUR'?a.balance*ES:a.currency==='USD'?a.balance*US:0),0);
-        const el=document.getElementById('rev-sek');if(el&&tot>0)el.textContent=Math.round(tot).toLocaleString('sv-SE');
-      }
-      const ts=document.getElementById('live-ts');if(ts)ts.textContent=new Date().toLocaleTimeString('sv-SE');
-    }catch{at=null;}
-  }
-  setTimeout(()=>{upd();setInterval(upd,120000);},2000);
-})();
-</script>
+
 
 <div class="screen" id="screen-apis-status">
   <div class="screen-inner">
@@ -2212,39 +2199,49 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeV()});
   </div>
 </div>
 
-<script id="konton-live">
-(function(){
-  const AMOS='https://amos.wavult.com';const ES=10.80,US=9.21;
-  let at=null;
-  async function gat(){
-    if(at)return at;
-    try{const r=await fetch(AMOS+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;return at;}catch{return null;}
-  }
-  async function upd(){
-    try{
-      const t=await gat();if(!t)return;
-      const rr=await fetch(AMOS+'/api/banking/revolut',{headers:{'Authorization':'Bearer '+t}});
-      if(rr.ok){
-        const d=await rr.json();const accs=d.accounts||[];
-        const tot=accs.reduce((s,a)=>s+(a.currency==='SEK'?a.balance:a.currency==='EUR'?a.balance*ES:a.currency==='USD'?a.balance*US:0),0);
-        // Uppdatera båda vyer
-        ['rev-sek','konton-rev-sek'].forEach(id=>{
-          const el=document.getElementById(id);
-          if(el&&tot>0)el.textContent=Math.round(tot).toLocaleString('sv-SE')+' SEK';
-        });
-      }
-      const ts=document.getElementById('live-ts');if(ts)ts.textContent=new Date().toLocaleTimeString('sv-SE');
-    }catch{at=null;}
-  }
-  setTimeout(()=>{upd();setInterval(upd,120000);},2000);
-})();
-</script>
 
 
 
 
+<style id="paste-styles">
+#paste-preview-box {
+  display:none;
+  position:fixed;
+  bottom:130px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--panel);
+  border:2px solid var(--accent);
+  border-radius:14px;
+  padding:14px;
+  z-index:9000;
+  max-width:420px;
+  width:90vw;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+}
+#paste-preview-box.visible { display:block; }
+#paste-preview-img { max-width:100%;max-height:220px;border-radius:8px;display:block;margin:0 auto; }
+#paste-hint {
+  position:fixed;
+  bottom:80px;
+  right:16px;
+  background:var(--dark);
+  color:#fff;
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:11px;
+  z-index:8000;
+  opacity:0.9;
+  display:none;
+}
+#paste-hint.visible { display:block; }
+</style>
 
-<img id="paste-preview-img" src="" alt="screenshot">
+<div id="paste-preview-box">
+  <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px">
+    📸 Skärmbild – klar att skicka
+  </div>
+  <img id="paste-preview-img" src="" alt="screenshot">
   <div style="display:flex;gap:8px;margin-top:12px">
     <button id="paste-send-btn" style="flex:1;background:var(--accent);color:#fff;border:none;padding:10px;border-radius:10px;cursor:pointer;font-weight:700;font-size:13px">
       Skicka till AMOS ↗
@@ -2255,7 +2252,157 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeV()});
   </div>
 </div>
 
+<div id="paste-hint">📸 Ctrl+V för att klistra in skärmbild</div>
 
+<script id="paste-v3">
+(function(){
+  const AMOS = 'https://amos.wavult.com';
+  let pendingBlob = null;
+  let amosToken = null;
+  
+  // Hämta token
+  async function getToken() {
+    if(amosToken) return amosToken;
+    try {
+      const r = await fetch(AMOS+'/api/auth/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})
+      });
+      const d = await r.json();
+      amosToken = d.token;
+      return amosToken;
+    } catch { return null; }
+  }
+  
+  // Visa preview
+  function showPreview(blob, dataUrl) {
+    pendingBlob = blob;
+    document.getElementById('paste-preview-img').src = dataUrl;
+    document.getElementById('paste-preview-box').classList.add('visible');
+  }
+  
+  // Stäng preview
+  function closePreview() {
+    document.getElementById('paste-preview-box').classList.remove('visible');
+    document.getElementById('paste-preview-img').src = '';
+    pendingBlob = null;
+  }
+  
+  // Skicka bild
+  async function sendImage() {
+    if(!pendingBlob) return;
+    const btn = document.getElementById('paste-send-btn');
+    btn.textContent = '⏳ Laddar upp...';
+    btn.disabled = true;
+    
+    try {
+      const t = await getToken();
+      
+      // 1. Ladda upp bilden
+      const formData = new FormData();
+      formData.append('file', pendingBlob, 'screenshot.png');
+      
+      const uploadR = await fetch(AMOS+'/cfo/upload', {
+        method:'POST',
+        headers:{'Authorization': 'Bearer '+t},
+        body: formData
+      });
+      const uploadD = await uploadR.json();
+      const imgUrl = AMOS + (uploadD.files?.[0]?.url || '');
+      
+      // 2. Hämta current session
+      const sessR = await fetch(AMOS+'/cfo/sessions', {
+        headers:{'Authorization':'Bearer '+t}
+      });
+      const sessD = await sessR.json();
+      const sessionId = sessD.sessions?.[0]?.id;
+      
+      if(!sessionId) throw new Error('Ingen aktiv session');
+      
+      // 3. Skicka till chat med attachment
+      const input = document.getElementById('input');
+      const userMsg = input?.value?.trim() || 'Vad ser du på denna skärmbild? Analysera och förklara vad som behöver göras.';
+      
+      // Skicka via EventSource/fetch
+      const chatR = await fetch(AMOS+'/cfo/chat', {
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+t,
+          'Content-Type':'application/json',
+          'Accept':'text/event-stream'
+        },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          message: userMsg,
+          attachments: [{url: imgUrl, type: 'image'}]
+        })
+      });
+      
+      closePreview();
+      if(input) input.value = '';
+      
+      // Läs SSE-svaret och visa i chatten
+      const reader = chatR.body.getReader();
+      const decoder = new TextDecoder();
+      
+      // Visa att AMOS svarar
+      btn.textContent = '✅ Skickat!';
+      setTimeout(()=>{btn.textContent='Skicka till AMOS ↗';btn.disabled=false;}, 2000);
+      
+      // Trigga en page refresh av chatten om möjligt
+      if(typeof loadSession === 'function') {
+        setTimeout(loadSession, 500);
+      }
+      
+    } catch(e) {
+      btn.textContent = '❌ Fel: '+e.message;
+      btn.disabled = false;
+      setTimeout(()=>{btn.textContent='Skicka till AMOS ↗';},3000);
+    }
+  }
+  
+  // Event listeners
+  document.getElementById('paste-send-btn').addEventListener('click', sendImage);
+  document.getElementById('paste-cancel-btn').addEventListener('click', closePreview);
+  
+  // Lyssna på paste
+  document.addEventListener('paste', function(e) {
+    const items = e.clipboardData?.items;
+    if(!items) return;
+    
+    for(let item of items) {
+      if(item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if(!blob) continue;
+        
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          showPreview(blob, ev.target.result);
+        };
+        reader.readAsDataURL(blob);
+        break;
+      }
+    }
+  });
+  
+  // Visa hint när input är fokuserad
+  const input = document.getElementById('input');
+  if(input) {
+    input.addEventListener('focus', function() {
+      document.getElementById('paste-hint').classList.add('visible');
+    });
+    input.addEventListener('blur', function() {
+      document.getElementById('paste-hint').classList.remove('visible');
+    });
+  }
+  
+  // Hämta token direkt
+  getToken();
+  
+})();
+</script>
 
 <div class="screen" id="screen-atgarder">
   <div class="screen-inner">
@@ -2464,35 +2611,8 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeV()});
     </div>
   </div>
 </div>
-<script id="sp">
+<script id="amos-core">
 (function(){
-  const A='https://amos.wavult.com';let at=null;
-  async function gt(){if(at)return at;try{const r=await fetch(A+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'winston@hypbit.com',password:'WavultCFO2026!'})});const d=await r.json();at=d.token;}catch{}return at;}
-  document.addEventListener('paste',async function(e){
-    const items=e.clipboardData?.items;if(!items)return;
-    for(let i=0;i<items.length;i++){
-      if(items[i].type.startsWith('image/')){
-        e.preventDefault();
-        const blob=items[i].getAsFile();if(!blob)return;
-        try{
-          const t=await gt();if(!t)return;
-          const fd=new FormData();fd.append('file',blob,'ss.png');
-          const u=await(await fetch(A+'/cfo/upload',{method:'POST',headers:{'Authorization':'Bearer '+t},body:fd})).json();
-          const imgUrl=A+(u.files?.[0]?.url||'');
-          const s=await(await fetch(A+'/cfo/sessions',{headers:{'Authorization':'Bearer '+t}})).json();
-          const sid=s.sessions?.[0]?.id;if(!sid)return;
-          const inp=document.getElementById('input');
-          const msg=(inp?.value?.trim())||'Analysera denna skärmbild.';
-          fetch(A+'/cfo/chat',{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json','Accept':'text/event-stream'},
-            body:JSON.stringify({sessionId:sid,message:msg,attachments:[{url:imgUrl,type:'image'}]})
-          }).then(()=>{if(typeof loadSession==='function')setTimeout(loadSession,800);});
-          if(inp){inp.value='';inp.focus();}
-        }catch{}return;
-      }
-    }
-  });
-  gt();
-})();
-</script>
+  var KEY='</script>
 </body>
 </html>
